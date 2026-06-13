@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema 6×6 — SuperEnalotto</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #f5f5f5;
+  --surface:     #ffffff;
+  --border:      #e0e0e0;
+  --text:        #111111;
+  --muted:       #6b7280;
+  --accent:      #1a56db;
+  --accent-lt:   #dbeafe;
+  --accent-dk:   #1e40af;
+  --double-bg:   #fef9c3;
+  --double-brd:  #ca8a04;
+  --star-color:  #b45309;
+  --radius:      8px;
+  --shadow:      0 1px 3px rgba(0,0,0,.08);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+/* ── Header ─────────────────────────────────── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: .875rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.back-btn {
+  display: inline-flex; align-items: center; gap: .3rem;
+  font-size: .8125rem; font-weight: 600; color: var(--muted);
+  text-decoration: none; padding: .3rem .6rem;
+  border: 1px solid var(--border); border-radius: 6px;
+  white-space: nowrap; transition: .12s;
+  flex-shrink: 0;
+}
+.back-btn:hover { border-color: var(--accent); color: var(--accent); }
+.header-title { flex: 1; }
+header h1  { font-size: 1.25rem; font-weight: 700; letter-spacing: -.02em; }
+header .sub { font-size: .8125rem; color: var(--muted); }
+
+/* ── Bottone PDF ─────────────────────────────── */
+.btn-pdf {
+  display: none; align-items: center; gap: .4rem;
+  padding: .5rem 1rem;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  font-size: .875rem; font-weight: 600; cursor: pointer;
+  transition: .12s; white-space: nowrap;
+}
+.btn-pdf:hover { border-color: var(--accent); color: var(--accent); }
+.btn-pdf.visible { display: inline-flex; }
+.results-toolbar {
+  display: flex; justify-content: flex-end;
+  margin-bottom: .5rem;
+}
+
+/* ── Print header ── */
+.print-hd {
+  display: none;
+  margin-bottom: 1.25rem;
+  padding-bottom: .875rem;
+  border-bottom: 2px solid #111;
+}
+.print-hd h2 { font-size: 1.125rem; font-weight: 700; }
+.print-hd p  { font-size: .8125rem; color: #555; margin-top: .25rem; }
+
+/* ── @media print ────────────────────────────── */
+@media print {
+  body { background: #fff; font-size: 12px; }
+  header, .card:first-of-type, .results-toolbar, .btn-pdf { display: none !important; }
+  #results { display: flex !important; }
+  .print-hd { display: block !important; }
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    break-inside: avoid;
+    margin-bottom: .75rem;
+  }
+  .bets-tbl tbody tr { break-inside: avoid; }
+  .btn-gen, .err, #ss-opts { display: none !important; }
+}
+
+/* ── Layout ─────────────────────────────────── */
+main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Card ───────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.375rem 1.5rem;
+}
+.card-lbl {
+  font-size: .6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+/* ── Config row ─────────────────────────────── */
+.cfg-group { display: flex; flex-direction: column; gap: .875rem; }
+.cfg-row { display: flex; align-items: flex-start; gap: 1rem; }
+.cfg-lbl {
+  width: 170px; flex-shrink: 0;
+  font-size: .875rem; font-weight: 500;
+  padding-top: .25rem;
+}
+.cfg-lbl small {
+  display: block; font-weight: 400;
+  font-size: .75rem; color: var(--muted); margin-top: .1rem;
+}
+.cfg-ctrl { flex: 1; }
+
+/* ── Select ─────────────────────────────────── */
+.cfg-ctrl select {
+  padding: .5rem .75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: .9375rem;
+  background: var(--surface)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right .75rem center;
+  appearance: none;
+  cursor: pointer;
+  min-width: 220px;
+}
+
+/* ── Radios ─────────────────────────────────── */
+.radios { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+.radio-col { flex-direction: column; gap: .45rem; }
+.radio-opt {
+  display: flex; align-items: center; gap: .4rem;
+  font-size: .875rem; cursor: pointer;
+}
+.radio-opt input { accent-color: var(--accent); width: 1rem; height: 1rem; cursor: pointer; }
+
+/* ── Text input ─────────────────────────────── */
+.txt-inp {
+  width: 100%; padding: .5rem .75rem;
+  border: 1px solid var(--border); border-radius: 6px;
+  font-size: .875rem; font-family: inherit;
+  transition: border-color .15s; color: var(--text); background: var(--surface);
+}
+.txt-inp:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,86,219,.12); }
+.txt-inp.narrow { max-width: 140px; }
+
+/* ── Divider ─────────────────────────────────── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 1.125rem 0; }
+
+/* ── Section label ───────────────────────────── */
+.sec-lbl {
+  font-size: .6875rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em;
+  color: var(--muted); margin: 1.25rem 0 .875rem;
+}
+
+/* ── Generate button ─────────────────────────── */
+.btn-gen {
+  display: block; width: 100%;
+  padding: .75rem 1rem;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 6px;
+  font-size: 1rem; font-weight: 700; cursor: pointer;
+  letter-spacing: .01em; transition: background .15s;
+}
+.btn-gen:hover { background: var(--accent-dk); }
+.btn-gen:active { transform: scale(.99); }
+
+/* ── Error ───────────────────────────────────── */
+.err {
+  margin-top: .875rem; padding: .625rem .875rem;
+  background: #fee2e2; border: 1px solid #fca5a5;
+  border-radius: 6px; color: #991b1b; font-size: .875rem; display: none;
+}
+
+/* ── Results ─────────────────────────────────── */
+#results { display: none; flex-direction: column; gap: 1.25rem; }
+
+.result-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1rem; gap: .5rem; flex-wrap: wrap;
+}
+.result-hd h2 { font-size: 1rem; font-weight: 700; }
+.badge {
+  font-size: .75rem; font-weight: 700;
+  padding: .2rem .625rem; border-radius: 999px;
+  background: var(--accent-lt); color: var(--accent);
+}
+
+/* ── Cost note ───────────────────────────────── */
+.cost-note {
+  display: flex; align-items: baseline; gap: .5rem;
+  margin-bottom: .875rem;
+  font-size: .9375rem;
+}
+.cost-total {
+  font-size: 1.375rem; font-weight: 700; letter-spacing: -.01em;
+}
+.cost-detail { font-size: .8125rem; color: var(--muted); }
+
+/* ── SS unico note ───────────────────────────── */
+.ss-unico-note {
+  display: flex; align-items: center; gap: .5rem;
+  background: #fffbeb; border: 1px solid #fde68a;
+  border-radius: 6px; padding: .5rem .875rem;
+  font-size: .875rem; margin-bottom: .875rem;
+  color: #92400e;
+}
+.ss-unico-note .star-big { font-size: 1.125rem; font-weight: 700; }
+
+/* ── Grid ────────────────────────────────────── */
+.grid-wrap { overflow-x: auto; }
+.grid-tbl {
+  border-collapse: collapse; margin: 0 auto;
+  font-size: .9375rem; font-variant-numeric: tabular-nums;
+}
+.grid-tbl td {
+  width: 2.75rem; height: 2.75rem;
+  text-align: center; vertical-align: middle;
+  border: 1px solid var(--border); font-weight: 500;
+}
+.grid-tbl td.dup {
+  background: var(--double-bg); border-color: var(--double-brd);
+  font-weight: 700; color: #78350f;
+}
+.dup-note { text-align: center; font-size: .8125rem; color: var(--muted); margin-top: .75rem; }
+.dup-tag {
+  display: inline-block; background: var(--double-bg);
+  border: 1px solid var(--double-brd); color: #78350f;
+  font-weight: 700; padding: .05rem .45rem; border-radius: 4px; margin: 0 .1rem;
+}
+
+/* ── Bets table ──────────────────────────────── */
+.bets-tbl {
+  width: 100%; border-collapse: collapse;
+  font-size: .875rem; font-variant-numeric: tabular-nums;
+}
+.bets-tbl th {
+  padding: .45rem .75rem; border-bottom: 2px solid var(--border);
+  text-align: left; font-size: .6875rem;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+}
+.bets-tbl td { padding: .4rem .75rem; border-bottom: 1px solid var(--border); }
+.bets-tbl tr:last-child td { border-bottom: none; }
+.num-code {
+  font-size: .9375rem; font-weight: 500; letter-spacing: .04em;
+  white-space: nowrap;
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+}
+.star { color: var(--star-color); font-weight: 700; }
+.idx  { color: var(--muted); width: 2rem; }
+.grp  { color: var(--muted); font-size: .8125rem; width: 8.5rem; }
+
+/* ── Stats card ──────────────────────────────── */
+.stats-note { font-size: .8125rem; color: var(--muted); line-height: 1.5; margin-bottom: .625rem; }
+.prob-wrap { overflow-x: auto; margin-bottom: .25rem; }
+.prob-tbl { border-collapse: collapse; font-size: .8125rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.prob-tbl th, .prob-tbl td { padding: .35rem .6rem; border: 1px solid var(--border); text-align: center; }
+.prob-tbl th { background: var(--bg); font-size: .6875rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+.prob-tbl .k-hd { text-align: left; }
+.prob-tbl .k-cell { font-weight: 700; text-align: left; background: var(--bg); }
+.prob-tbl .c-win { background: #f0fdf4; color: #15803d; font-weight: 700; }
+.prob-tbl .c-win6 { background: #fef9c3; color: #92400e; font-weight: 700; }
+.prob-tbl .c-prob { color: var(--muted); font-size: .75rem; }
+
+@media (max-width: 560px) {
+  .cfg-row { flex-direction: column; gap: .375rem; }
+  .cfg-lbl { width: auto; padding-top: 0; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="back-btn">← Sistemi</a>
+  <div class="header-title">
+    <h1>Sistema 6×6 Cruciverba</h1>
+    <span class="sub">SuperEnalotto — matrice 6×6 con 14 sestine dirette</span>
+  </div>
+</header>
+
+<main>
+
+<!-- ── Config card ─────────────────────────────────────────────────────── -->
+<div class="card">
+  <div class="card-lbl">Configurazione</div>
+
+  <div class="cfg-group">
+
+    <div class="cfg-row">
+      <div class="cfg-lbl">
+        Posizione duplicati
+        <small>Ordine di selezione delle celle replicate</small>
+      </div>
+      <div class="cfg-ctrl">
+        <div class="radios">
+          <label class="radio-opt">
+            <input type="radio" name="dup-pos" value="centro" checked> Centro → Angoli
+          </label>
+          <label class="radio-opt">
+            <input type="radio" name="dup-pos" value="angoli"> Angoli → Centro
+          </label>
+          <label class="radio-opt">
+            <input type="radio" name="dup-pos" value="casuale"> Tutto casuale
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="cfg-row">
+      <div class="cfg-lbl">
+        Numeri ripetuti
+        <small>Duplicati nella griglia (0–10)</small>
+      </div>
+      <div class="cfg-ctrl">
+        <select id="dup-sel" onchange="st.dup = +this.value">
+          <option value="0">0 — tutti distinti (36 numeri)</option>
+          <option value="1">1 — un ripetuto (35 numeri distinti)</option>
+          <option value="2">2 — due ripetuti (34 numeri distinti)</option>
+          <option value="3">3 — tre ripetuti (33 numeri distinti)</option>
+          <option value="4" selected>4 — quattro ripetuti (32 numeri distinti)</option>
+          <option value="5">5 — cinque ripetuti (31 numeri distinti)</option>
+          <option value="6">6 — sei ripetuti (30 numeri distinti)</option>
+          <option value="7">7 — sette ripetuti (29 numeri distinti)</option>
+          <option value="8">8 — otto ripetuti (28 numeri distinti)</option>
+          <option value="9">9 — nove ripetuti (27 numeri distinti)</option>
+          <option value="10">10 — dieci ripetuti (26 numeri distinti)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="cfg-row">
+      <div class="cfg-lbl">
+        Numeri fissi
+        <small>Devono comparire nella griglia (1–90, separati da virgola)</small>
+      </div>
+      <div class="cfg-ctrl">
+        <input class="txt-inp" type="text" id="fixed-in"
+               placeholder="es. 7, 34, 56  —  lascia vuoto per casualità"
+               onkeydown="if(event.key==='Enter') generate()">
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SuperStar -->
+  <div class="sec-lbl">SuperStar</div>
+  <div class="cfg-group">
+
+    <div class="cfg-row">
+      <div class="cfg-lbl">Includi SuperStar</div>
+      <div class="cfg-ctrl">
+        <div class="radios">
+          <label class="radio-opt">
+            <input type="radio" name="ss-on" value="si" checked onchange="updateSSUI()"> Sì
+          </label>
+          <label class="radio-opt">
+            <input type="radio" name="ss-on" value="no" onchange="updateSSUI()"> No
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div id="ss-opts">
+
+      <div class="cfg-row">
+        <div class="cfg-lbl">
+          Modalità
+          <small>Stesso numero per tutte le giocate, oppure uno diverso per ciascuna</small>
+        </div>
+        <div class="cfg-ctrl">
+          <div class="radios">
+            <label class="radio-opt">
+              <input type="radio" name="ss-mode" value="unico" checked onchange="updateSSUI()"> Unico per tutte
+            </label>
+            <label class="radio-opt">
+              <input type="radio" name="ss-mode" value="per-giocata" onchange="updateSSUI()"> Uno per giocata
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div id="ss-unico-row" class="cfg-row">
+        <div class="cfg-lbl">
+          Numero
+          <small>Casuale o scelto da te (1–90)</small>
+        </div>
+        <div class="cfg-ctrl" style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+          <div class="radios">
+            <label class="radio-opt">
+              <input type="radio" name="ss-src" value="casuale" checked onchange="updateSSUI()"> Casuale
+            </label>
+            <label class="radio-opt">
+              <input type="radio" name="ss-src" value="definito" onchange="updateSSUI()"> Definito
+            </label>
+          </div>
+          <input class="txt-inp narrow" type="text" id="ss-unico-num"
+                 placeholder="es. 42" style="display:none"
+                 onkeydown="if(event.key==='Enter') generate()">
+        </div>
+      </div>
+
+      <div id="ss-pg-opts" style="display:none" class="cfg-group">
+
+        <div class="cfg-row">
+          <div class="cfg-lbl">Tipo</div>
+          <div class="cfg-ctrl">
+            <div class="radios radio-col">
+              <label class="radio-opt">
+                <input type="radio" name="ss-pg" value="rip" checked onchange="updateSSUI()">
+                Casuali (possono ripetersi)
+              </label>
+              <label class="radio-opt">
+                <input type="radio" name="ss-pg" value="no-rip" onchange="updateSSUI()">
+                Casuali (non si ripetono)
+              </label>
+              <label class="radio-opt">
+                <input type="radio" name="ss-pg" value="definiti" onchange="updateSSUI()">
+                Definiti da me
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div id="ss-pg-def-row" class="cfg-row" style="display:none">
+          <div class="cfg-lbl">
+            Numeri
+            <small>In ordine per giocata; i rimanenti saranno casuali</small>
+          </div>
+          <div class="cfg-ctrl">
+            <input class="txt-inp" type="text" id="ss-pg-nums"
+                   placeholder="es. 7, 34, 56, 12 ..."
+                   onkeydown="if(event.key==='Enter') generate()">
+          </div>
+        </div>
+
+      </div>
+
+    </div><!-- /ss-opts -->
+
+  </div><!-- /SuperStar -->
+
+  <hr class="divider">
+  <button class="btn-gen" onclick="generate()">Genera sistema</button>
+  <div class="err" id="err-msg"></div>
+</div>
+
+<!-- ── Results ──────────────────────────────────────────────────────────── -->
+<div id="results">
+
+  <div class="results-toolbar">
+    <button class="btn-pdf" id="btn-pdf" onclick="salvaPDF()">⬇ Salva PDF</button>
+  </div>
+
+  <div class="print-hd" id="print-hd">
+    <h2>Sistema SuperEnalotto 6×6 Cruciverba</h2>
+    <p id="print-info"></p>
+  </div>
+
+  <div class="card">
+    <div class="result-hd">
+      <h2>Matrice 6×6</h2>
+      <span class="badge" id="grid-badge"></span>
+    </div>
+    <div class="grid-wrap">
+      <table class="grid-tbl" id="grid-tbl"></table>
+    </div>
+    <div class="dup-note" id="dup-note"></div>
+  </div>
+
+  <div class="card">
+    <div class="result-hd">
+      <h2 id="bets-title">Sestine — Sistema Integrale</h2>
+      <span class="badge" id="bets-badge"></span>
+    </div>
+    <div id="cost-note" class="cost-note" style="display:none">
+      <span class="cost-total" id="cost-total"></span>
+      <span class="cost-detail" id="cost-detail"></span>
+    </div>
+    <div id="ss-unico-banner" style="display:none" class="ss-unico-note">
+      <span>SuperStar unico per tutte le giocate:</span>
+      <span class="star-big star" id="ss-unico-val"></span>
+    </div>
+    <table class="bets-tbl" id="bets-tbl"></table>
+  </div>
+
+
+</div>
+
+</main>
+
+<script>
+'use strict';
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const st = { dup: 4 };
+
+// ─── UI helpers ───────────────────────────────────────────────────────────────
+function updateSSUI() {
+  const on = document.querySelector('input[name="ss-on"]:checked').value === 'si';
+  document.getElementById('ss-opts').style.display = on ? '' : 'none';
+  if (!on) return;
+
+  const mode = document.querySelector('input[name="ss-mode"]:checked').value;
+  document.getElementById('ss-unico-row').style.display = mode === 'unico' ? '' : 'none';
+  document.getElementById('ss-pg-opts').style.display = mode === 'per-giocata' ? '' : 'none';
+
+  if (mode === 'unico') {
+    const src = document.querySelector('input[name="ss-src"]:checked').value;
+    document.getElementById('ss-unico-num').style.display = src === 'definito' ? '' : 'none';
+  }
+  if (mode === 'per-giocata') {
+    const pg = document.querySelector('input[name="ss-pg"]:checked').value;
+    document.getElementById('ss-pg-def-row').style.display = pg === 'definiti' ? '' : 'none';
+  }
+}
+
+function showErr(msg) {
+  const el = document.getElementById('err-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideErr() { document.getElementById('err-msg').style.display = 'none'; }
+
+// ─── Utils ────────────────────────────────────────────────────────────────────
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function rnd90() { return Math.floor(Math.random() * 90) + 1; }
+
+function combinazioni(n, k) {
+  if (k > n || k < 0) return 0;
+  if (k === 0 || k === n) return 1;
+  let r = 1;
+  for (let i = 0; i < k; i++) r = r * (n - i) / (i + 1);
+  return Math.round(r);
+}
+
+function fmtPct(p, dec = 2) {
+  if (p <= 0) return '—';
+  if (p * 100 >= 0.01) return (p * 100).toFixed(dec) + '%';
+  return '<0.01%';
+}
+
+function parseNums(str) {
+  if (!str || !str.trim()) return [];
+  return [...new Set(
+    str.split(/[\s,;]+/).map(s => parseInt(s, 10))
+       .filter(n => !isNaN(n) && n >= 1 && n <= 90)
+  )];
+}
+
+// ─── Grid 6×6 ────────────────────────────────────────────────────────────────
+// Coppie (sorgente, destinazione) per duplicati.
+// Anti-diagonale: r + c = 5. Diagonale principale: r == c.
+// Vincoli: rdst≠rsrc, cdst≠csrc, non entrambi su stessa diagonale.
+const PAIRS = [
+  [[0, 0], [3, 1]],   // dup  1: angolo maindiag     dist=5
+  [[5, 5], [2, 4]],   // dup  2: angolo maindiag     dist=5
+  [[0, 5], [2, 0]],   // dup  3: angolo antidiag     dist=5
+  [[5, 0], [3, 4]],   // dup  4: angolo antidiag     dist=5
+  [[1, 1], [4, 3]],   // dup  5: inner maindiag      dist=3
+  [[4, 4], [1, 2]],   // dup  6: inner maindiag      dist=3
+  [[2, 3], [4, 0]],   // dup  7: centro antidiag     dist=1  (2+3=5)
+  [[3, 2], [1, 3]],   // dup  8: centro antidiag     dist=1  (3+2=5)
+  [[2, 2], [5, 4]],   // dup  9: centro maindiag     dist=1
+  [[3, 3], [0, 2]],   // dup 10: centro maindiag     dist=1
+];
+
+// Ordina le PAIRS in 3 fasce per distanza Manhattan dal centro:
+//   centroGrp (40% più vicini) → angoliGrp (40% più lontani) → shuffle(medioGrp)
+// oppure l'inverso, oppure tutto casuale.
+function getOrderedPairs(strategy) {
+  const N = 6;
+  const cx = (N - 1) / 2;  // 2.5
+
+  const withDist = PAIRS.map((p, i) => {
+    const [rs, cs] = p[0];
+    return { p, dist: Math.abs(rs - cx) + Math.abs(cs - cx), i };
+  });
+
+  if (strategy === 'casuale') {
+    const a = [...withDist];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a.map(x => x.p);
+  }
+
+  // Ordina ascending per separare i 3 gruppi
+  const byDist = [...withDist].sort((a, b) => a.dist - b.dist || a.i - b.i);
+  const minDist = byDist[0].dist;
+  const maxDist = byDist[byDist.length - 1].dist;
+
+  const centroGrp = byDist.filter(x => x.dist === minDist);  // più vicini al centro
+  const angoliGrp = [...byDist.filter(x => x.dist === maxDist)].reverse(); // più lontani
+  const medioArr  = byDist.filter(x => x.dist !== minDist && x.dist !== maxDist);
+
+  // Shuffle del gruppo medio (le celle "di passaggio")
+  const medioGrp = [...medioArr];
+  for (let i = medioGrp.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [medioGrp[i], medioGrp[j]] = [medioGrp[j], medioGrp[i]];
+  }
+
+  const order = strategy === 'centro'
+    ? [...centroGrp, ...angoliGrp, ...medioGrp]   // centro → angoli → casuale(medio)
+    : [...angoliGrp, ...centroGrp, ...medioGrp];   // angoli → centro → casuale(medio)
+
+  return order.map(x => x.p);
+}
+
+function buildGrid(numDup, fixedNums, strategy) {
+  const N = 6;
+  const grid = Array.from({length: N}, (_, r) =>
+    Array.from({length: N}, (_, c) => N * r + c + 1));
+
+  const orderedPairs = getOrderedPairs(strategy);
+  for (let i = 0; i < numDup; i++) {
+    const [[rs, cs], [rd, cd]] = orderedPairs[i];
+    grid[rd][cd] = grid[rs][cs];
+  }
+
+  const allVals = [...new Set(grid.flat())].sort((a, b) => a - b);
+  const nDist   = allVals.length;
+
+  const uniqFixed = parseNums(fixedNums.join(','));
+  if (uniqFixed.length > nDist)
+    throw new Error(`Troppi numeri fissi (${uniqFixed.length}): il sistema ha ${nDist} posizioni distinte.`);
+
+  const fixedSet = new Set(uniqFixed);
+  const pool = shuffle(Array.from({length: 90}, (_, i) => i + 1).filter(n => !fixedSet.has(n)));
+  const targets = shuffle([...uniqFixed, ...pool.slice(0, nDist - uniqFixed.length)]);
+
+  const remap = {};
+  allVals.forEach((v, i) => { remap[v] = targets[i]; });
+  return grid.map(row => row.map(v => remap[v]));
+}
+
+function verifyGrid(grid) {
+  const N = 6;
+  const errors = [];
+  for (let i = 0; i < N; i++)
+    if (new Set(grid[i]).size !== N) errors.push(`Riga ${i+1} ha duplicati`);
+  for (let j = 0; j < N; j++)
+    if (new Set(grid.map(r => r[j])).size !== N) errors.push(`Colonna ${j+1} ha duplicati`);
+  if (new Set(grid.map((r, i) => r[i])).size !== N)
+    errors.push('Diagonale ↘ ha duplicati');
+  if (new Set(grid.map((r, i) => r[N-1-i])).size !== N)
+    errors.push('Diagonale ↙ ha duplicati');
+
+  const freq = {};
+  grid.flat().forEach(n => { freq[n] = (freq[n]||0) + 1; });
+  const doubles = Object.keys(freq).filter(k => freq[k] === 2).map(Number).sort((a, b) => a - b);
+  return { errors, doubles };
+}
+
+// ─── Sestine ─────────────────────────────────────────────────────────────────
+function getSestine(grid) {
+  const N = 6;
+  const s = [];
+  for (let i = 0; i < N; i++) s.push({ label: `Riga ${i+1}`,    nums: [...grid[i]] });
+  for (let j = 0; j < N; j++) s.push({ label: `Colonna ${j+1}`, nums: grid.map(r => r[j]) });
+  s.push({ label: 'Diagonale ↘', nums: grid.map((r, i) => r[i]) });
+  s.push({ label: 'Diagonale ↙', nums: grid.map((r, i) => r[N-1-i]) });
+  return s;
+}
+
+// ─── Verifica combinazioni duplicate ─────────────────────────────────────────
+function hasDuplicateCombos(bets) {
+  const seen = new Set();
+  for (const { nums } of bets) {
+    const key = [...nums].sort((a, b) => a - b).join(',');
+    if (seen.has(key)) return true;
+    seen.add(key);
+  }
+  return false;
+}
+
+// ─── SuperStar ────────────────────────────────────────────────────────────────
+function getSuperStars(nBets) {
+  const on = document.querySelector('input[name="ss-on"]:checked').value === 'si';
+  if (!on) return { unico: null, list: null };
+
+  const mode = document.querySelector('input[name="ss-mode"]:checked').value;
+
+  if (mode === 'unico') {
+    const src = document.querySelector('input[name="ss-src"]:checked').value;
+    let n;
+    if (src === 'definito') {
+      const parsed = parseNums(document.getElementById('ss-unico-num').value);
+      n = parsed.length ? parsed[0] : rnd90();
+    } else {
+      n = rnd90();
+    }
+    return { unico: n, list: null };
+  }
+
+  const pg = document.querySelector('input[name="ss-pg"]:checked').value;
+  if (pg === 'rip')
+    return { unico: null, list: Array.from({length: nBets}, rnd90) };
+  if (pg === 'no-rip') {
+    const base = shuffle(Array.from({length: 90}, (_, i) => i + 1));
+    return { unico: null, list: Array.from({length: nBets}, (_, i) => i < 90 ? base[i] : rnd90()) };
+  }
+  const userNums = parseNums(document.getElementById('ss-pg-nums').value);
+  return { unico: null, list: Array.from({length: nBets}, (_, i) => i < userNums.length ? userNums[i] : rnd90()) };
+}
+
+// ─── Render: grid ─────────────────────────────────────────────────────────────
+function renderGrid(grid, doubles) {
+  const dupSet = new Set(doubles);
+  document.getElementById('grid-badge').textContent =
+    `${new Set(grid.flat()).size} numeri distinti`;
+  document.getElementById('grid-tbl').innerHTML = grid.map(row =>
+    '<tr>' + row.map(n => `<td class="${dupSet.has(n) ? 'dup' : ''}">${n}</td>`).join('') + '</tr>'
+  ).join('');
+
+  const note = document.getElementById('dup-note');
+  if (doubles.length) {
+    note.innerHTML = 'Ripetuti: ' + doubles.map(d => `<span class="dup-tag">${d}</span>`).join(' ');
+    note.style.display = '';
+  } else {
+    note.style.display = 'none';
+  }
+}
+
+// ─── Render: bets ─────────────────────────────────────────────────────────────
+function renderBets(sestine, ss) {
+  const ssEnabled = ss.unico !== null || ss.list !== null;
+
+  const banner = document.getElementById('ss-unico-banner');
+  if (ss.unico !== null) {
+    document.getElementById('ss-unico-val').textContent = `★ ${ss.unico}`;
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+
+  document.getElementById('bets-badge').textContent =
+    `${sestine.length} giocate · 6 numeri`;
+
+  // Costo: ogni sestina = C(6,6) = 1 combinazione
+  const pricePerBet = 1.00 + (ssEnabled ? 0.50 : 0.00);
+  const total = sestine.length * pricePerBet;
+  const fmt = n => n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
+  const ssNote = ssEnabled ? ' + €0,50 SuperStar' : '';
+  document.getElementById('cost-total').textContent = fmt(total);
+  document.getElementById('cost-detail').textContent =
+    `${sestine.length} sestine × ${fmt(pricePerBet)} [€1,00${ssNote}]`;
+  document.getElementById('cost-note').style.display = 'flex';
+
+  const hasPerRow = ss.list !== null;
+  const ssHead = hasPerRow ? '<th>SuperStar</th>' : '';
+  let html = `<thead><tr><th>#</th><th>Gruppo</th><th>Sestina (6 numeri)</th>${ssHead}</tr></thead><tbody>`;
+
+  sestine.forEach(({ label, nums }, i) => {
+    const ns = nums.map(n => String(n).padStart(2)).join('  ');
+    const ssCell = hasPerRow ? `<td class="star">★ ${ss.list[i]}</td>` : '';
+    html += `<tr>
+      <td class="idx">${i+1}</td>
+      <td class="grp">${label}</td>
+      <td><span class="num-code">${ns}</span></td>
+      ${ssCell}
+    </tr>`;
+  });
+
+  html += '</tbody>';
+  document.getElementById('bets-tbl').innerHTML = html;
+}
+
+// ─── Generate ──────────────────────────────────────────────────────────────────
+function generate() {
+  hideErr();
+  const fixedNums = parseNums(document.getElementById('fixed-in').value);
+
+  try {
+    const MAX_TRIES = 300;
+    let grid, doubles, sestine;
+    let tries = 0;
+
+    do {
+      const strategy = document.querySelector('input[name="dup-pos"]:checked').value;
+      grid = buildGrid(st.dup, fixedNums, strategy);
+      const v = verifyGrid(grid);
+      if (v.errors.length) throw new Error('Verifica: ' + v.errors.join(' · '));
+      doubles = v.doubles;
+      sestine = getSestine(grid);
+      tries++;
+    } while (hasDuplicateCombos(sestine) && tries < MAX_TRIES);
+
+    if (hasDuplicateCombos(sestine))
+      throw new Error('Impossibile generare un sistema senza sestine duplicate. Prova a ridurre i numeri ripetuti.');
+
+    const ss = getSuperStars(sestine.length);
+
+    renderGrid(grid, doubles);
+    renderBets(sestine, ss);
+    // Print header
+    const ssOn = document.querySelector('input[name="ss-on"]:checked').value === 'si';
+    const dataOra = new Date().toLocaleString('it-IT', { dateStyle: 'long', timeStyle: 'short' });
+    const fissiStr = fixedNums.length ? `Numeri fissi: ${fixedNums.join(', ')}` : '';
+    document.getElementById('print-info').textContent =
+      [
+        `Generato il ${dataOra}`,
+        `Tipo: Integrale`,
+        `Numeri ripetuti: ${st.dup}`,
+        `SuperStar: ${ssOn ? 'Sì' : 'No'}`,
+        fissiStr,
+      ].filter(Boolean).join('  ·  ');
+
+    document.getElementById('btn-pdf').classList.add('visible');
+
+    const res = document.getElementById('results');
+    res.style.display = 'flex';
+    setTimeout(() => res.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  } catch(e) {
+    showErr(e.message);
+  }
+}
+
+// ─── PDF ───────────────────────────────────────────────────────────────────────
+function caricaScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function salvaPDF() {
+  const btn = document.getElementById('btn-pdf');
+  const testo = btn.innerHTML;
+  btn.innerHTML = '⏳ Caricamento…';
+  btn.disabled = true;
+
+  const phd     = document.getElementById('print-hd');
+  const toolbar = document.querySelector('.results-toolbar');
+  phd.style.display     = 'block';
+  toolbar.style.display = 'none';
+
+  try {
+    await caricaScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await caricaScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    btn.innerHTML = '⏳ Generando…';
+
+    const el = document.getElementById('results');
+    const canvas = await html2canvas(el, {
+      scale: 1.8, useCORS: true, logging: false,
+      backgroundColor: '#ffffff',
+      width: el.scrollWidth, height: el.scrollHeight,
+    });
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const A4_W = 210, A4_H = 297, MARGIN = 12;
+    const printW = A4_W - MARGIN * 2;
+    const printH = A4_H - MARGIN * 2;
+    const scale  = printW / canvas.width;
+    const totalH = canvas.height * scale;
+
+    let yDone = 0;
+    while (yDone < totalH) {
+      const sliceH = Math.min(printH, totalH - yDone);
+      const srcY   = Math.round(yDone / scale);
+      const srcH   = Math.round(sliceH / scale);
+      const slice  = document.createElement('canvas');
+      slice.width  = canvas.width;
+      slice.height = srcH;
+      slice.getContext('2d').drawImage(canvas, 0, -srcY);
+      pdf.addImage(slice.toDataURL('image/jpeg', 0.93), 'JPEG', MARGIN, MARGIN, printW, sliceH);
+      yDone += printH;
+      if (yDone < totalH) pdf.addPage();
+    }
+
+    const d = new Date().toLocaleDateString('it-IT').replace(/\//g, '-');
+    pdf.save(`sistema_6x6_${d}.pdf`);
+  } catch(err) {
+    console.error(err);
+    alert('Generazione PDF non riuscita.\nUsa Ctrl+P → "Salva come PDF" come alternativa.');
+  } finally {
+    phd.style.display     = 'none';
+    toolbar.style.display = 'flex';
+    btn.innerHTML = testo;
+    btn.disabled  = false;
+  }
+}
+</script>
+
+</body>
+</html>
