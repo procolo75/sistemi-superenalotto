@@ -1,5 +1,7 @@
 # Sistemi SuperEnalotto
 
+**Sito online:** https://procolo75.github.io/sistemi-superenalotto/
+
 Generatore di sistemi a griglia per il SuperEnalotto. Tre matrici disponibili — 6×6, 7×7 e 8×8 — con supporto a numeri fissi, numeri ripetuti, SuperStar e modalità ridotta o integrale. Funziona interamente nel browser, senza installazioni né dipendenze esterne.
 
 ---
@@ -31,14 +33,6 @@ python3 -m http.server 8080
 ```
 
 Non è strettamente necessario un server — i file funzionano anche aperti direttamente dal filesystem — tranne che per la generazione PDF, che richiede il caricamento di una libreria esterna (`html2pdf.js` via CDN).
-
-### GitHub Pages
-
-Se il repository è pubblico, attiva **Pages** dalle impostazioni del repo (`Settings → Pages → Source: main / root`). Il sito sarà disponibile all'indirizzo:
-
-```
-https://<tuo-utente>.github.io/sistemi-superenalotto/
-```
 
 ---
 
