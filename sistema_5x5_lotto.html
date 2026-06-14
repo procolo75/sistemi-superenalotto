@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema 5×5 — Lotto</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #f5f5f5;
+  --surface:     #ffffff;
+  --border:      #e0e0e0;
+  --text:        #111111;
+  --muted:       #6b7280;
+  --accent:      #1a56db;
+  --accent-lt:   #dbeafe;
+  --accent-dk:   #1e40af;
+  --double-bg:   #fef9c3;
+  --double-brd:  #ca8a04;
+  --radius:      8px;
+  --shadow:      0 1px 3px rgba(0,0,0,.08);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: .875rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.back-btn {
+  display: inline-flex; align-items: center; gap: .3rem;
+  font-size: .8125rem; font-weight: 600; color: var(--muted);
+  text-decoration: none; padding: .3rem .6rem;
+  border: 1px solid var(--border); border-radius: 6px;
+  white-space: nowrap; transition: .12s; flex-shrink: 0;
+}
+.back-btn:hover { border-color: var(--accent); color: var(--accent); }
+.header-title { flex: 1; }
+header h1  { font-size: 1.25rem; font-weight: 700; letter-spacing: -.02em; }
+header .sub { font-size: .8125rem; color: var(--muted); }
+
+.btn-pdf {
+  display: none; align-items: center; gap: .4rem;
+  padding: .5rem 1rem;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  font-size: .875rem; font-weight: 600; cursor: pointer;
+  transition: .12s; white-space: nowrap;
+}
+.btn-pdf:hover { border-color: var(--accent); color: var(--accent); }
+.btn-pdf.visible { display: inline-flex; }
+.results-toolbar { display: flex; justify-content: flex-end; margin-bottom: .5rem; }
+
+.print-hd {
+  display: none;
+  margin-bottom: 1.25rem;
+  padding-bottom: .875rem;
+  border-bottom: 2px solid #111;
+}
+.print-hd h2 { font-size: 1.125rem; font-weight: 700; }
+.print-hd p  { font-size: .8125rem; color: #555; margin-top: .25rem; }
+
+@media print {
+  body { background: #fff; font-size: 12px; }
+  header, .card:first-of-type, .results-toolbar, .btn-pdf { display: none !important; }
+  #results { display: flex !important; }
+  .print-hd { display: block !important; }
+  .card { box-shadow: none !important; border: 1px solid #ccc !important; break-inside: avoid; margin-bottom: .75rem; }
+  .bets-tbl tbody tr { break-inside: avoid; }
+  .btn-gen, .err { display: none !important; }
+}
+
+main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.375rem 1.5rem;
+}
+.card-lbl {
+  font-size: .6875rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em;
+  color: var(--muted); margin-bottom: 1rem;
+}
+
+.cfg-group { display: flex; flex-direction: column; gap: .875rem; }
+.cfg-row { display: flex; align-items: flex-start; gap: 1rem; }
+.cfg-lbl {
+  width: 170px; flex-shrink: 0;
+  font-size: .875rem; font-weight: 500;
+  padding-top: .25rem;
+}
+.cfg-lbl small { display: block; font-weight: 400; font-size: .75rem; color: var(--muted); margin-top: .1rem; }
+.cfg-ctrl { flex: 1; }
+
+.cfg-ctrl select {
+  padding: .5rem .75rem;
+  border: 1px solid var(--border); border-radius: 6px;
+  font-size: .9375rem;
+  background: var(--surface)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right .75rem center;
+  appearance: none; cursor: pointer; min-width: 260px;
+}
+
+.radios { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+.radio-opt { display: flex; align-items: center; gap: .4rem; font-size: .875rem; cursor: pointer; }
+.radio-opt input { accent-color: var(--accent); width: 1rem; height: 1rem; cursor: pointer; }
+
+.txt-inp {
+  width: 100%; padding: .5rem .75rem;
+  border: 1px solid var(--border); border-radius: 6px;
+  font-size: .875rem; font-family: inherit;
+  transition: border-color .15s; color: var(--text); background: var(--surface);
+}
+.txt-inp:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,86,219,.12); }
+
+.divider { border: none; border-top: 1px solid var(--border); margin: 1.125rem 0; }
+
+.btn-gen {
+  display: block; width: 100%; padding: .75rem 1rem;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 6px;
+  font-size: 1rem; font-weight: 700; cursor: pointer;
+  letter-spacing: .01em; transition: background .15s;
+}
+.btn-gen:hover { background: var(--accent-dk); }
+.btn-gen:active { transform: scale(.99); }
+
+.err {
+  margin-top: .875rem; padding: .625rem .875rem;
+  background: #fee2e2; border: 1px solid #fca5a5;
+  border-radius: 6px; color: #991b1b; font-size: .875rem; display: none;
+}
+
+#results { display: none; flex-direction: column; gap: 1.25rem; }
+
+.result-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1rem; gap: .5rem; flex-wrap: wrap;
+}
+.result-hd h2 { font-size: 1rem; font-weight: 700; }
+.badge {
+  font-size: .75rem; font-weight: 700; padding: .2rem .625rem;
+  border-radius: 999px; background: var(--accent-lt); color: var(--accent);
+}
+
+.cost-note { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .875rem; font-size: .9375rem; }
+.cost-total { font-size: 1.375rem; font-weight: 700; letter-spacing: -.01em; }
+.cost-detail { font-size: .8125rem; color: var(--muted); }
+
+.grid-wrap { overflow-x: auto; }
+.grid-tbl {
+  border-collapse: collapse; margin: 0 auto;
+  font-size: .9375rem; font-variant-numeric: tabular-nums;
+}
+.grid-tbl td {
+  width: 2.75rem; height: 2.75rem;
+  text-align: center; vertical-align: middle;
+  border: 1px solid var(--border); font-weight: 500;
+}
+.grid-tbl td.dup { background: var(--double-bg); border-color: var(--double-brd); font-weight: 700; color: #78350f; }
+.dup-note { text-align: center; font-size: .8125rem; color: var(--muted); margin-top: .75rem; }
+.dup-tag {
+  display: inline-block; background: var(--double-bg);
+  border: 1px solid var(--double-brd); color: #78350f;
+  font-weight: 700; padding: .05rem .45rem; border-radius: 4px; margin: 0 .1rem;
+}
+
+.bets-tbl { width: 100%; border-collapse: collapse; font-size: .875rem; font-variant-numeric: tabular-nums; }
+.bets-tbl th {
+  padding: .45rem .75rem; border-bottom: 2px solid var(--border);
+  text-align: left; font-size: .6875rem;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+}
+.bets-tbl td { padding: .4rem .75rem; border-bottom: 1px solid var(--border); }
+.bets-tbl tr:last-child td { border-bottom: none; }
+.num-code {
+  font-size: .9375rem; font-weight: 500; letter-spacing: .04em;
+  white-space: nowrap;
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+}
+.idx  { color: var(--muted); width: 2rem; }
+.grp  { color: var(--muted); font-size: .8125rem; width: 8.5rem; }
+
+.excl-tbl { width: 100%; border-collapse: collapse; font-size: .8125rem; }
+.excl-tbl th { padding: .35rem .75rem; border-bottom: 2px solid var(--border); text-align: left; font-size: .6875rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.excl-tbl td { padding: .375rem .75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.excl-tbl tr:last-child td { border-bottom: none; }
+.tag { display: inline-block; padding: .1rem .45rem; border-radius: 4px; font-size: .75rem; font-weight: 600; }
+.tag-rep  { background: var(--double-bg); border: 1px solid var(--double-brd); color: #78350f; }
+.tag-norm { background: #f3f4f6; border: 1px solid #d1d5db; color: #374151; }
+.tag-ok   { background: var(--accent-lt); color: var(--accent); border-radius: 999px; }
+.tag-zero { background: #fee2e2; color: #991b1b; border-radius: 999px; }
+.warn-note { margin-top: .625rem; padding: .5rem .75rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; font-size: .8125rem; color: #92400e; }
+.stats-note { font-size: .8125rem; color: var(--muted); line-height: 1.5; margin-bottom: .625rem; }
+
+.vinc-tbl { border-collapse: collapse; width: 100%; font-size: .875rem; font-variant-numeric: tabular-nums; }
+.vinc-tbl th { padding: .4rem .75rem; border-bottom: 2px solid var(--border); font-size: .6875rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; text-align: right; }
+.vinc-tbl th:first-child { text-align: left; }
+.vinc-tbl td { padding: .4rem .75rem; border-bottom: 1px solid var(--border); text-align: right; }
+.vinc-tbl td:first-child { text-align: left; font-weight: 600; }
+.vinc-tbl tr:last-child td { border-bottom: none; }
+.vinc-tbl .v-dash { color: #d1d5db; }
+.vinc-tbl .v-total { font-weight: 700; }
+.vinc-tbl .v-top { background: #f0fdf4; color: #15803d; }
+
+@media (max-width: 560px) {
+  .cfg-row { flex-direction: column; gap: .375rem; }
+  .cfg-lbl { width: auto; padding-top: 0; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="back-btn">← Sistemi</a>
+  <div class="header-title">
+    <h1>Sistema 5×5 Lotto</h1>
+    <span class="sub">Lotto — matrice 5×5, sviluppo ridotto n−1 (12 quartine)</span>
+  </div>
+</header>
+
+<main>
+
+<!-- ── Config card ─────────────────────────────────────────────────────── -->
+<div class="card">
+  <div class="card-lbl">Configurazione</div>
+
+  <div class="cfg-group">
+
+    <div class="cfg-row">
+      <div class="cfg-lbl">
+        Posizione duplicati
+        <small>Ordine di selezione delle celle replicate</small>
+      </div>
+      <div class="cfg-ctrl">
+        <div class="radios">
+          <label class="radio-opt">
+            <input type="radio" name="dup-pos" value="centro" checked> Centro → Angoli
+          </label>
+          <label class="radio-opt">
+            <input type="radio" name="dup-pos" value="angoli"> Angoli → Centro
+          </label>
+          <label class="radio-opt">
+            <input type="radio" name="dup-pos" value="casuale"> Tutto casuale
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="cfg-row">
+      <div class="cfg-lbl">
+        Numeri ripetuti
+        <small>Duplicati nella griglia (0–6)</small>
+      </div>
+      <div class="cfg-ctrl">
+        <select id="dup-sel" onchange="st.dup = +this.value">
+          <option value="0">0 — tutti distinti (25 numeri)</option>
+          <option value="1">1 — un ripetuto (24 numeri distinti)</option>
+          <option value="2">2 — due ripetuti (23 numeri distinti)</option>
+          <option value="3">3 — tre ripetuti (22 numeri distinti)</option>
+          <option value="4" selected>4 — quattro ripetuti (21 numeri distinti)</option>
+          <option value="5">5 — cinque ripetuti (20 numeri distinti)</option>
+          <option value="6">6 — sei ripetuti (19 numeri distinti)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="cfg-row">
+      <div class="cfg-lbl">
+        Numeri fissi
+        <small>Devono comparire nella griglia (1–90, separati da virgola)</small>
+      </div>
+      <div class="cfg-ctrl">
+        <input class="txt-inp" type="text" id="fixed-in"
+               placeholder="es. 7, 34, 56  —  lascia vuoto per casualità"
+               onkeydown="if(event.key==='Enter') generate()">
+      </div>
+    </div>
+
+  </div>
+
+  <hr class="divider">
+
+  <!-- Puntata -->
+  <div class="card-lbl" style="margin-bottom:.75rem">Puntata per giocata</div>
+  <div class="cfg-group">
+
+    <div class="cfg-row">
+      <div class="cfg-lbl">
+        Ambo
+        <small>step €0,50</small>
+      </div>
+      <div class="cfg-ctrl">
+        <input class="txt-inp narrow" type="number" id="stake-ambo"
+               min="0.50" step="0.50" value="1.00" oninput="updateCost()">
+      </div>
+    </div>
+
+    <div class="cfg-row">
+      <div class="cfg-lbl">
+        Terno
+        <small>step €0,10</small>
+      </div>
+      <div class="cfg-ctrl">
+        <input class="txt-inp narrow" type="number" id="stake-terno"
+               min="0.10" step="0.10" value="0.50" oninput="updateCost()">
+      </div>
+    </div>
+
+    <div class="cfg-row">
+      <div class="cfg-lbl">
+        Quaterna
+        <small>step €0,10</small>
+      </div>
+      <div class="cfg-ctrl">
+        <input class="txt-inp narrow" type="number" id="stake-quaterna"
+               min="0.10" step="0.10" value="0.10" oninput="updateCost()">
+      </div>
+    </div>
+
+  </div>
+
+  <hr class="divider">
+  <button class="btn-gen" onclick="generate()">Genera sistema</button>
+  <div class="err" id="err-msg"></div>
+</div>
+
+<!-- ── Results ──────────────────────────────────────────────────────────── -->
+<div id="results">
+
+  <div class="results-toolbar">
+    <button class="btn-pdf" id="btn-pdf" onclick="salvaPDF()">⬇ Salva PDF</button>
+  </div>
+
+  <div class="print-hd" id="print-hd">
+    <h2>Sistema Lotto 5×5 — Sviluppo Ridotto n−1 (Quartine)</h2>
+    <p id="print-info"></p>
+  </div>
+
+  <div class="card">
+    <div class="result-hd">
+      <h2>Matrice 5×5</h2>
+      <span class="badge" id="grid-badge"></span>
+    </div>
+    <div class="grid-wrap">
+      <table class="grid-tbl" id="grid-tbl"></table>
+    </div>
+    <div class="dup-note" id="dup-note"></div>
+  </div>
+
+  <div class="card">
+    <div class="result-hd">
+      <h2>Quartine — Sviluppo Ridotto n−1</h2>
+      <span class="badge" id="bets-badge"></span>
+    </div>
+    <div id="cost-note" class="cost-note" style="display:none">
+      <span class="cost-total" id="cost-total"></span>
+      <span class="cost-detail" id="cost-detail"></span>
+    </div>
+    <table class="bets-tbl" id="bets-tbl"></table>
+  </div>
+
+  <div class="card" id="vincite-card">
+    <div class="result-hd">
+      <h2>Prospetto Vincite</h2>
+      <span class="badge">per singola quartina · per ruota</span>
+    </div>
+    <p class="stats-note">Vincita lorda al variare dei numeri estratti nella tua quartina. I valori si aggiornano al cambio della puntata.</p>
+    <div id="vincite-table"></div>
+  </div>
+
+  <div class="card" id="stats-ridotto">
+    <div class="result-hd">
+      <h2>Numero escluso per ogni riga / colonna / diagonale</h2>
+      <span class="badge">Ridotto n−1</span>
+    </div>
+    <p class="stats-note">
+      Se il numero escluso viene estratto, quante altre quartine del sistema lo catturano ancora?
+      "0 giocate" = se esce, il sistema non lo prende da nessuna parte.
+    </p>
+    <div id="excl-analysis"></div>
+  </div>
+
+</div>
+
+</main>
+
+<script>
+'use strict';
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const st = { dup: 4 };
+let lastBets = null;
+
+// ─── UI helpers ───────────────────────────────────────────────────────────────
+function showErr(msg) {
+  const el = document.getElementById('err-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideErr() { document.getElementById('err-msg').style.display = 'none'; }
+
+// ─── Utils ────────────────────────────────────────────────────────────────────
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function parseNums(str) {
+  if (!str || !str.trim()) return [];
+  return [...new Set(
+    str.split(/[\s,;]+/).map(s => parseInt(s, 10))
+       .filter(n => !isNaN(n) && n >= 1 && n <= 90)
+  )];
+}
+
+// ─── Grid 5×5 ────────────────────────────────────────────────────────────────
+// Coppie (sorgente, destinazione) per duplicati.
+// Vincoli: rd≠rs, cd≠cs, non entrambi sulla stessa diagonale.
+// Diagonale principale: r==c. Anti-diagonale: r+c==4.
+//
+// Gruppo centro  (indice 0):   cella centrale (2,2)
+// Gruppo angoli  (indici 1-4): 4 angoli della griglia
+// Gruppo interno (indice 5):   cella interna secondaria
+//
+// Con 5 duplicati → centro + 4 angoli sempre, indipendentemente dalla strategia.
+const PAIRS = [
+  [[2, 2], [0, 3]],   // dup 1 — centro            (2,2)→(0,3)
+  [[0, 0], [3, 2]],   // dup 2 — angolo TL          (0,0)→(3,2)
+  [[4, 4], [1, 0]],   // dup 3 — angolo BR          (4,4)→(1,0)
+  [[0, 4], [2, 1]],   // dup 4 — angolo TR          (0,4)→(2,1)
+  [[4, 0], [3, 4]],   // dup 5 — angolo BL          (4,0)→(3,4)
+  [[1, 1], [4, 3]],   // dup 6 — interno secondario (1,1)→(4,3)
+];
+
+// Ordinamento esplicito per strategia:
+//   centro  → [centro, angoli(TL,BR,TR,BL), interno]
+//   angoli  → [angoli(TL,BR,TR,BL), centro, interno]
+//   casuale → shuffle
+// Con ≤5 duplicati la strategia sceglie se il centro o gli angoli sono attivati prima.
+function getOrderedPairs(strategy) {
+  if (strategy === 'casuale') return shuffle([...PAIRS]);
+  const centro  = [PAIRS[0]];
+  const angoli  = [PAIRS[1], PAIRS[2], PAIRS[3], PAIRS[4]];
+  const interno = [PAIRS[5]];
+  return strategy === 'centro'
+    ? [...centro, ...angoli, ...interno]
+    : [...angoli, ...centro, ...interno];
+}
+
+function buildGrid(numDup, fixedNums, strategy) {
+  const N = 5;
+  const grid = Array.from({length: N}, (_, r) =>
+    Array.from({length: N}, (_, c) => N * r + c + 1));
+
+  const orderedPairs = getOrderedPairs(strategy);
+  for (let i = 0; i < numDup; i++) {
+    const [[rs, cs], [rd, cd]] = orderedPairs[i];
+    grid[rd][cd] = grid[rs][cs];
+  }
+
+  const allVals = [...new Set(grid.flat())].sort((a, b) => a - b);
+  const nDist   = allVals.length;
+
+  const uniqFixed = parseNums(fixedNums.join(','));
+  if (uniqFixed.length > nDist)
+    throw new Error(`Troppi numeri fissi (${uniqFixed.length}): il sistema ha ${nDist} posizioni distinte.`);
+
+  const fixedSet = new Set(uniqFixed);
+  const pool = shuffle(Array.from({length: 90}, (_, i) => i + 1).filter(n => !fixedSet.has(n)));
+  const targets = shuffle([...uniqFixed, ...pool.slice(0, nDist - uniqFixed.length)]);
+
+  const remap = {};
+  allVals.forEach((v, i) => { remap[v] = targets[i]; });
+  return grid.map(row => row.map(v => remap[v]));
+}
+
+function verifyGrid(grid) {
+  const N = 5;
+  const errors = [];
+  for (let i = 0; i < N; i++)
+    if (new Set(grid[i]).size !== N) errors.push(`Riga ${i+1} ha duplicati`);
+  for (let j = 0; j < N; j++)
+    if (new Set(grid.map(r => r[j])).size !== N) errors.push(`Colonna ${j+1} ha duplicati`);
+  if (new Set(grid.map((r, i) => r[i])).size !== N)
+    errors.push('Diagonale ↘ ha duplicati');
+  if (new Set(grid.map((r, i) => r[N-1-i])).size !== N)
+    errors.push('Diagonale ↙ ha duplicati');
+
+  const freq = {};
+  grid.flat().forEach(n => { freq[n] = (freq[n]||0) + 1; });
+  const doubles = Object.keys(freq).filter(k => freq[k] === 2).map(Number).sort((a, b) => a - b);
+  return { errors, doubles };
+}
+
+// ─── Quintine (12 linee della griglia) ───────────────────────────────────────
+function getQuintine(grid) {
+  const N = 5;
+  const q = [];
+  for (let i = 0; i < N; i++) q.push({ label: `Riga ${i+1}`,    nums: [...grid[i]] });
+  for (let j = 0; j < N; j++) q.push({ label: `Colonna ${j+1}`, nums: grid.map(r => r[j]) });
+  q.push({ label: 'Diagonale ↘', nums: grid.map((r, i) => r[i]) });
+  q.push({ label: 'Diagonale ↙', nums: grid.map((r, i) => r[N-1-i]) });
+  return q;
+}
+
+// ─── Sviluppo ridotto n-1: 1 quartina per linea ───────────────────────────────
+// Regole:
+//   • ogni numero ripetuto può essere escluso al massimo 2 volte in totale
+//   • ogni numero non ripetuto deve comparire in almeno una quartina
+//
+// Fase 1 (greedy): per ogni quintina esclude il numero con la copertura
+//   maggiore (appare in più linee), rispettando il limite di 2 esclusioni.
+// Fase 2 (repair): se un numero distinto non appare in nessuna quartina,
+//   trova una linea che lo contiene e scambia l'escluso con un alternativo
+//   già coperto altrove (senza superare il limite di 2 esclusioni).
+function getBetsRidotto(quintine) {
+  const cov = {};
+  quintine.forEach(({ nums }) => nums.forEach(n => { cov[n] = (cov[n]||0) + 1; }));
+
+  const countExcl = (bets, n, skipIdx = -1) =>
+    bets.filter((b, j) => j !== skipIdx && b.excl === n).length;
+
+  // Fase 1
+  const exclCount = {};
+  let bets = quintine.map(({ label, nums }) => {
+    const candidates = nums.filter(n => (exclCount[n] || 0) < 2);
+    const pool = candidates.length > 0 ? candidates : nums;
+    const excl = pool.reduce((a, b) => cov[a] >= cov[b] ? a : b);
+    exclCount[excl] = (exclCount[excl] || 0) + 1;
+    return {
+      label,
+      allNums: [...nums],
+      excl,
+      nums: nums.filter(n => n !== excl).sort((a, b) => a - b),
+    };
+  });
+
+  // Fase 2 — garantisce che ogni numero distinto appaia in almeno una quartina
+  const allDistinct = [...new Set(quintine.flatMap(q => q.nums))];
+
+  for (let iter = 0; iter < allDistinct.length; iter++) {
+    const inQuartina = new Set(bets.flatMap(b => b.nums));
+    const uncovered  = allDistinct.filter(n => !inQuartina.has(n));
+    if (uncovered.length === 0) break;
+
+    const un = uncovered[0];
+    for (let i = 0; i < bets.length; i++) {
+      if (!bets[i].allNums.includes(un)) continue;
+
+      const alts = bets[i].allNums
+        .filter(n => n !== un)
+        .filter(n => countExcl(bets, n, i) < 2)
+        .filter(n => bets.some((b, j) => j !== i && b.nums.includes(n)))
+        .sort((a, b) => cov[b] - cov[a]);
+
+      if (alts.length > 0) {
+        const newExcl = alts[0];
+        bets[i] = {
+          ...bets[i],
+          excl: newExcl,
+          nums: bets[i].allNums.filter(n => n !== newExcl).sort((a, b) => a - b),
+        };
+        break;
+      }
+    }
+  }
+
+  return bets;
+}
+
+// ─── Verifica combinazioni duplicate ─────────────────────────────────────────
+function hasDuplicateCombos(bets) {
+  const seen = new Set();
+  for (const { nums } of bets) {
+    const key = [...nums].sort((a, b) => a - b).join(',');
+    if (seen.has(key)) return true;
+    seen.add(key);
+  }
+  return false;
+}
+
+// ─── Render: grid ─────────────────────────────────────────────────────────────
+function renderGrid(grid, doubles) {
+  const dupSet = new Set(doubles);
+  document.getElementById('grid-badge').textContent =
+    `${new Set(grid.flat()).size} numeri distinti`;
+  document.getElementById('grid-tbl').innerHTML = grid.map(row =>
+    '<tr>' + row.map(n => `<td class="${dupSet.has(n) ? 'dup' : ''}">${n}</td>`).join('') + '</tr>'
+  ).join('');
+
+  const note = document.getElementById('dup-note');
+  if (doubles.length) {
+    note.innerHTML = 'Ripetuti: ' + doubles.map(d => `<span class="dup-tag">${d}</span>`).join(' ');
+    note.style.display = '';
+  } else {
+    note.style.display = 'none';
+  }
+}
+
+// ─── Puntata ──────────────────────────────────────────────────────────────────
+function getStakes() {
+  const ambo     = Math.max(0.50, parseFloat(document.getElementById('stake-ambo').value)     || 0.50);
+  const terno    = Math.max(0.10, parseFloat(document.getElementById('stake-terno').value)    || 0.10);
+  const quaterna = Math.max(0.10, parseFloat(document.getElementById('stake-quaterna').value) || 0.10);
+  return { ambo, terno, quaterna };
+}
+
+function updateCost() {
+  if (!lastBets) return;
+  const fmt = n => n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
+  const { ambo, terno, quaterna } = getStakes();
+  const costPerBet = ambo + terno + quaterna;
+
+  // Costo totale sistema
+  document.getElementById('cost-total').textContent  = fmt(lastBets.length * costPerBet);
+  document.getElementById('cost-detail').textContent =
+    `${lastBets.length} quartine × ${fmt(costPerBet)}` +
+    `  [ambo ${fmt(ambo)} + terno ${fmt(terno)} + quaterna ${fmt(quaterna)}]`;
+
+  // Prospetto vincite per quartina
+  // 2 estratti: 1 ambo  →  (ambo/6) × 250
+  // 3 estratti: 3 ambi + 1 terno  →  (ambo/6)×3×250 + (terno/4)×4500
+  // 4 estratti: 6 ambi + 4 terne + 1 quaterna  →  ambo×250 + terno×4500 + quaterna×120000
+  const w2a = ambo / 6 * 250;
+  const w3a = ambo / 6 * 3 * 250;
+  const w3t = terno / 4 * 4500;
+  const w4a = ambo * 250;
+  const w4t = terno * 4500;
+  const w4q = quaterna * 120000;
+
+  const dash = '<span class="v-dash">—</span>';
+  const rows = [
+    { label: '2 estratti',
+      a: fmt(w2a),          t: dash,         q: dash,      tot: w2a,              top: false },
+    { label: '3 estratti',
+      a: fmt(w3a),          t: fmt(w3t),     q: dash,      tot: w3a + w3t,        top: false },
+    { label: '4 estratti',
+      a: fmt(w4a),          t: fmt(w4t),     q: fmt(w4q),  tot: w4a + w4t + w4q,  top: true  },
+  ];
+
+  let html = `<table class="vinc-tbl"><thead><tr>
+    <th>Estratti</th><th>Ambo</th><th>Terno</th><th>Quaterna</th><th>Totale</th>
+  </tr></thead><tbody>`;
+  rows.forEach(({ label, a, t, q, tot, top }) => {
+    const cls = top ? ' class="v-top"' : '';
+    html += `<tr${cls}>
+      <td>${label}</td><td>${a}</td><td>${t}</td><td>${q}</td>
+      <td class="v-total">${fmt(tot)}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('vincite-table').innerHTML = html;
+}
+
+// ─── Render: bets ─────────────────────────────────────────────────────────────
+function renderBets(bets) {
+  lastBets = bets;
+
+  document.getElementById('bets-badge').textContent =
+    `${bets.length} giocate · 4 numeri`;
+
+  document.getElementById('cost-note').style.display = 'flex';
+  updateCost();
+
+  let html = `<thead><tr>
+    <th>#</th><th>Gruppo</th><th>Quartina (4 numeri)</th>
+  </tr></thead><tbody>`;
+
+  bets.forEach(({ label, nums }, i) => {
+    const ns = nums.map(n => String(n).padStart(2)).join('  ');
+    html += `<tr>
+      <td class="idx">${i+1}</td>
+      <td class="grp">${label}</td>
+      <td><span class="num-code">${ns}</span></td>
+    </tr>`;
+  });
+
+  html += '</tbody>';
+  document.getElementById('bets-tbl').innerHTML = html;
+}
+
+// ─── Render: card analisi esclusi ─────────────────────────────────────────────
+function renderStatsCard(bets, doubles) {
+  const doubleSet = new Set(doubles);
+  const betCov = {};
+  bets.forEach(({ nums }) => nums.forEach(x => { betCov[x] = (betCov[x]||0) + 1; }));
+
+  let html = '<table class="excl-tbl"><thead><tr>';
+  html += '<th>Riga / Colonna / Diagonale</th><th>Num. escluso</th><th>Tipo</th><th>Coperto da</th>';
+  html += '</tr></thead><tbody>';
+
+  let nZero = 0;
+  bets.forEach(({ label, excl }) => {
+    const isRep    = doubleSet.has(excl);
+    const captured = betCov[excl] || 0;
+    if (captured === 0) nZero++;
+    const typeTag = isRep
+      ? '<span class="tag tag-rep">Ripetuto</span>'
+      : '<span class="tag tag-norm">Normale</span>';
+    const covTag = captured === 0
+      ? '<span class="tag tag-zero">⚠ 0 giocate</span>'
+      : `<span class="tag tag-ok">✓ ${captured} giocata${captured > 1 ? 'e' : ''}</span>`;
+    html += `<tr>
+      <td class="grp">${label}</td>
+      <td><strong>${excl}</strong></td>
+      <td>${typeTag}</td>
+      <td>${covTag}</td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  if (nZero > 0) {
+    html += `<div class="warn-note">⚠ <strong>${nZero} ${nZero === 1 ? 'numero non compare' : 'numeri non compaiono'}</strong> in nessuna quartina: se estratt${nZero === 1 ? 'o' : 'i'}, non vengono catturati.</div>`;
+  }
+  document.getElementById('excl-analysis').innerHTML = html;
+}
+
+// ─── Generate ──────────────────────────────────────────────────────────────────
+function generate() {
+  hideErr();
+  const fixedNums = parseNums(document.getElementById('fixed-in').value);
+
+  try {
+    const MAX_TRIES = 300;
+    let grid, doubles, quintine, bets;
+    let tries = 0;
+
+    do {
+      const strategy = document.querySelector('input[name="dup-pos"]:checked').value;
+      grid    = buildGrid(st.dup, fixedNums, strategy);
+      const v = verifyGrid(grid);
+      if (v.errors.length) throw new Error('Verifica: ' + v.errors.join(' · '));
+      doubles  = v.doubles;
+      quintine = getQuintine(grid);
+      bets     = getBetsRidotto(quintine);
+      tries++;
+    } while (hasDuplicateCombos(bets) && tries < MAX_TRIES);
+
+    if (hasDuplicateCombos(bets))
+      throw new Error('Impossibile generare un sistema senza quartine duplicate. Prova a ridurre i numeri ripetuti.');
+
+    renderGrid(grid, doubles);
+    renderBets(bets);
+    renderStatsCard(bets, doubles);
+
+    const dataOra = new Date().toLocaleString('it-IT', { dateStyle: 'long', timeStyle: 'short' });
+    const fissiStr = fixedNums.length ? `Numeri fissi: ${fixedNums.join(', ')}` : '';
+    document.getElementById('print-info').textContent =
+      [
+        `Generato il ${dataOra}`,
+        `Sviluppo: ridotto n−1`,
+        `Numeri ripetuti: ${st.dup}`,
+        fissiStr,
+      ].filter(Boolean).join('  ·  ');
+
+    document.getElementById('btn-pdf').classList.add('visible');
+    const res = document.getElementById('results');
+    res.style.display = 'flex';
+    setTimeout(() => res.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  } catch(e) {
+    showErr(e.message);
+  }
+}
+
+// ─── PDF ───────────────────────────────────────────────────────────────────────
+function caricaScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function salvaPDF() {
+  const btn = document.getElementById('btn-pdf');
+  const testo = btn.innerHTML;
+  btn.innerHTML = '⏳ Caricamento…';
+  btn.disabled = true;
+
+  const phd     = document.getElementById('print-hd');
+  const toolbar = document.querySelector('.results-toolbar');
+  phd.style.display     = 'block';
+  toolbar.style.display = 'none';
+
+  try {
+    await caricaScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await caricaScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    btn.innerHTML = '⏳ Generando…';
+
+    const el = document.getElementById('results');
+    const canvas = await html2canvas(el, {
+      scale: 1.8, useCORS: true, logging: false,
+      backgroundColor: '#ffffff',
+      width: el.scrollWidth, height: el.scrollHeight,
+    });
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const A4_W = 210, A4_H = 297, MARGIN = 12;
+    const printW = A4_W - MARGIN * 2;
+    const printH = A4_H - MARGIN * 2;
+    const scale  = printW / canvas.width;
+    const totalH = canvas.height * scale;
+
+    let yDone = 0;
+    while (yDone < totalH) {
+      const sliceH = Math.min(printH, totalH - yDone);
+      const srcY   = Math.round(yDone / scale);
+      const srcH   = Math.round(sliceH / scale);
+      const slice  = document.createElement('canvas');
+      slice.width  = canvas.width;
+      slice.height = srcH;
+      slice.getContext('2d').drawImage(canvas, 0, -srcY);
+      pdf.addImage(slice.toDataURL('image/jpeg', 0.93), 'JPEG', MARGIN, MARGIN, printW, sliceH);
+      yDone += printH;
+      if (yDone < totalH) pdf.addPage();
+    }
+
+    const d = new Date().toLocaleDateString('it-IT').replace(/\//g, '-');
+    pdf.save(`sistema_5x5_lotto_${d}.pdf`);
+  } catch(err) {
+    console.error(err);
+    alert('Generazione PDF non riuscita.\nUsa Ctrl+P → "Salva come PDF" come alternativa.');
+  } finally {
+    phd.style.display     = 'none';
+    toolbar.style.display = 'flex';
+    btn.innerHTML = testo;
+    btn.disabled  = false;
+  }
+}
+</script>
+
+</body>
+</html>
