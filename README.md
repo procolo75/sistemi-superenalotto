@@ -43,7 +43,7 @@ Non è strettamente necessario un server — i file funzionano anche aperti dire
 - **Griglia:** 6 righe × 6 colonne = 36 celle
 - **Gruppi:** 6 righe + 6 colonne + 2 diagonali = **14 sestine dirette**
 - **Modalità:** solo integrale — ogni gruppo è già una sestina da giocare
-- **Costo:** €14 (€21 con SuperStar)
+- **Costo:** €14 base · €21 con 1 SS · €28 con 2 SS · €35 con 3 SS
 
 Il sistema più semplice: ogni riga, colonna e diagonale è esattamente una sestina pronta da giocare, senza bisogno di riduzione.
 
@@ -55,10 +55,10 @@ Il sistema più semplice: ogni riga, colonna e diagonale è esattamente una sest
 - **Gruppi:** 7 righe + 7 colonne + 2 diagonali = **16 settine**
 - **Modalità disponibili:**
 
-| Modalità | Giocate | Costo base | Con SuperStar |
-|---|---|---|---|
-| Ridotto n−1 | 16 sestine (1 per settina) | €16 | €24 |
-| Integrale | 16 × C(7,6) = 112 sestine | €112 | €168 |
+| Modalità | Giocate | Costo base | Con 1 SS | Con 2 SS | Con 3 SS |
+|---|---|---|---|---|---|
+| Ridotto n−1 | 16 sestine (1 per settina) | €16 | €24 | €32 | €40 |
+| Integrale | 16 × C(7,6) = 112 sestine | €112 | €168 | €224 | €280 |
 
 **Ridotto n−1:** da ogni settina viene escluso 1 numero (quello in posizione predefinita o casuale), ottenendo una sestina per gruppo.
 
@@ -72,11 +72,11 @@ Il sistema più semplice: ogni riga, colonna e diagonale è esattamente una sest
 - **Gruppi:** 8 righe + 8 colonne + 2 diagonali = **18 ottine**
 - **Modalità disponibili:**
 
-| Modalità | Giocate | Costo base | Con SuperStar |
-|---|---|---|---|
-| Ridotto n−2 | 18 sestine (6 per ottina) | €18 | €27 |
-| Ridotto n−1 | 18 × C(7,6) = 126 sestine | €126 | €189 |
-| Integrale | 18 × C(8,6) = 504 sestine | €504 | €756 |
+| Modalità | Giocate | Costo base | Con 1 SS | Con 2 SS | Con 3 SS |
+|---|---|---|---|---|---|
+| Ridotto n−2 | 18 sestine (6 per ottina) | €18 | €27 | €36 | €45 |
+| Ridotto n−1 | 18 × C(7,6) = 126 sestine | €126 | €189 | €252 | €315 |
+| Integrale | 18 × C(8,6) = 504 sestine | €504 | €756 | €1.008 | €1.260 |
 
 **Ridotto n−2:** da ogni ottina vengono esclusi 2 numeri → 1 sestina per gruppo.  
 **Ridotto n−1:** da ogni ottina viene escluso 1 numero → C(7,6) = 7 sestine per gruppo.  
@@ -101,9 +101,13 @@ La posizione dei numeri ripetuti nella griglia può essere:
 
 ### SuperStar
 
-La SuperStar è opzionale. Quando attivata, si può scegliere tra:
-- **Numero unico** per tutte le giocate — casuale o definito manualmente
-- **Numero per giocata** — casuale indipendente per ciascuna giocata, oppure definiti manualmente
+La SuperStar è opzionale. Si può giocare **1, 2 o 3 SuperStar per giocata**: ogni SuperStar aggiuntiva costa €0,50 in più per giocata.
+
+Modalità disponibili:
+- **Unico per tutte** — uno stesso set di numeri SS per tutte le giocate (casuale o definito manualmente)
+- **Per giocata** — numeri SS diversi per ciascuna giocata: casuali con ripetizioni, casuali senza ripetizioni tra giocate, oppure definiti manualmente
+
+Quando si giocano 2 o 3 SuperStar, i numeri all'interno della stessa giocata sono sempre distinti tra loro.
 
 ---
 

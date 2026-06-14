@@ -462,8 +462,28 @@ main {
 
       <div class="cfg-row">
         <div class="cfg-lbl">
+          SuperStar per giocata
+          <small>Ogni SuperStar aggiunto costa €0,50 in più per giocata</small>
+        </div>
+        <div class="cfg-ctrl">
+          <div class="radios">
+            <label class="radio-opt">
+              <input type="radio" name="ss-count" value="1" checked onchange="updateSSUI()"> 1 <span style="color:var(--muted);font-size:.8rem">(+€0,50)</span>
+            </label>
+            <label class="radio-opt">
+              <input type="radio" name="ss-count" value="2" onchange="updateSSUI()"> 2 <span style="color:var(--muted);font-size:.8rem">(+€1,00)</span>
+            </label>
+            <label class="radio-opt">
+              <input type="radio" name="ss-count" value="3" onchange="updateSSUI()"> 3 <span style="color:var(--muted);font-size:.8rem">(+€1,50)</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="cfg-row">
+        <div class="cfg-lbl">
           Modalità
-          <small>Stesso numero per tutte le giocate, oppure uno diverso per ciascuna</small>
+          <small>Stessi numeri per tutte le giocate, oppure diversi per ciascuna</small>
         </div>
         <div class="cfg-ctrl">
           <div class="radios">
@@ -480,7 +500,7 @@ main {
       <!-- Unico sub-options -->
       <div id="ss-unico-row" class="cfg-row">
         <div class="cfg-lbl">
-          Numero
+          <span id="ss-unico-lbl">Numero</span>
           <small>Casuale o scelto da te (1–90)</small>
         </div>
         <div class="cfg-ctrl" style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
@@ -614,17 +634,25 @@ function updateSSUI() {
   document.getElementById('ss-opts').style.display = on ? '' : 'none';
   if (!on) return;
 
+  const ssCount = parseInt(document.querySelector('input[name="ss-count"]:checked').value);
   const mode = document.querySelector('input[name="ss-mode"]:checked').value;
   document.getElementById('ss-unico-row').style.display = mode === 'unico' ? '' : 'none';
   document.getElementById('ss-pg-opts').style.display = mode === 'per-giocata' ? '' : 'none';
 
   if (mode === 'unico') {
     const src = document.querySelector('input[name="ss-src"]:checked').value;
-    document.getElementById('ss-unico-num').style.display = src === 'definito' ? '' : 'none';
+    const inp = document.getElementById('ss-unico-num');
+    inp.style.display = src === 'definito' ? '' : 'none';
+    document.getElementById('ss-unico-lbl').textContent =
+      ssCount === 1 ? 'Numero' : `Numeri (${ssCount})`;
+    inp.placeholder = ssCount === 1 ? 'es. 42' : ssCount === 2 ? 'es. 7, 42' : 'es. 7, 42, 68';
   }
   if (mode === 'per-giocata') {
     const pg = document.querySelector('input[name="ss-pg"]:checked').value;
     document.getElementById('ss-pg-def-row').style.display = pg === 'definiti' ? '' : 'none';
+    document.getElementById('ss-pg-nums').placeholder = ssCount === 1
+      ? 'es. 7, 34, 56, 12 ...'
+      : `${ssCount} numeri per giocata in ordine, es. ${ssCount === 2 ? '7,42 34,56 12,88' : '7,42,68 34,56,12'} ...`;
   }
 }
 
@@ -887,52 +915,55 @@ function hasDuplicateCombos(bets) {
 }
 
 // ─── SuperStar ─────────────────────────────────────────────────────────────────
-/**
- * Returns { unico: Number|null, list: Number[] }
- * unico → same SS for all bets (display as banner, not per-row)
- * list  → one SS per bet (display inline)
- */
+function randomDistinct(n, exclude) {
+  const pool = shuffle(Array.from({length: 90}, (_, i) => i + 1).filter(x => !(exclude || new Set()).has(x)));
+  return pool.slice(0, n);
+}
+
 function getSuperStars(nBets) {
   const on = document.querySelector('input[name="ss-on"]:checked').value === 'si';
   if (!on) return { unico: null, list: null };
 
+  const ssCount = parseInt(document.querySelector('input[name="ss-count"]:checked').value);
   const mode = document.querySelector('input[name="ss-mode"]:checked').value;
 
-  // ── Unico ────────────────────────────────────────────────────────────────
   if (mode === 'unico') {
     const src = document.querySelector('input[name="ss-src"]:checked').value;
-    let n;
+    let nums;
     if (src === 'definito') {
       const parsed = parseNums(document.getElementById('ss-unico-num').value);
-      n = parsed.length ? parsed[0] : rnd90();
+      const taken = parsed.slice(0, ssCount);
+      nums = [...taken, ...randomDistinct(ssCount - taken.length, new Set(taken))];
     } else {
-      n = rnd90();
+      nums = randomDistinct(ssCount);
     }
-    return { unico: n, list: null };
+    return { unico: nums, list: null };
   }
 
-  // ── Per giocata ──────────────────────────────────────────────────────────
   const pg = document.querySelector('input[name="ss-pg"]:checked').value;
-
   if (pg === 'rip') {
-    return { unico: null, list: Array.from({length: nBets}, rnd90) };
+    return { unico: null, list: Array.from({length: nBets}, () => randomDistinct(ssCount)) };
   }
-
   if (pg === 'no-rip') {
-    // Max 90 non-repeating; if nBets > 90 allow repeats
-    const base = shuffle(Array.from({length: 90}, (_, i) => i + 1));
-    const list = Array.from({length: nBets}, (_, i) =>
-      i < 90 ? base[i] : rnd90()
-    );
-    return { unico: null, list };
+    const pool = shuffle(Array.from({length: 90}, (_, i) => i + 1)).slice(0, Math.min(ssCount * nBets, 90));
+    return {
+      unico: null,
+      list: Array.from({length: nBets}, (_, i) => {
+        const chunk = pool.slice(i * ssCount, (i + 1) * ssCount);
+        return chunk.length < ssCount
+          ? [...chunk, ...randomDistinct(ssCount - chunk.length, new Set(pool))]
+          : chunk;
+      })
+    };
   }
-
-  // definiti: user numbers in order, rest random
   const userNums = parseNums(document.getElementById('ss-pg-nums').value);
-  const list = Array.from({length: nBets}, (_, i) =>
-    i < userNums.length ? userNums[i] : rnd90()
-  );
-  return { unico: null, list };
+  return {
+    unico: null,
+    list: Array.from({length: nBets}, (_, i) => {
+      const chunk = userNums.slice(i * ssCount, (i + 1) * ssCount);
+      return [...chunk, ...randomDistinct(ssCount - chunk.length, new Set(chunk))];
+    })
+  };
 }
 
 // ─── Render: grid ─────────────────────────────────────────────────────────────
@@ -960,31 +991,32 @@ function renderBets(bets, ss, tipo) {
   const typeLabel  = isInt ? 'Giocate Integrali' : 'Sestine Ridotto';
   const numsLabel  = isInt ? `Settina (${numsPerBet} numeri)` : `Sestina (${numsPerBet} numeri)`;
 
-  // Banner for unico SS
   const banner = document.getElementById('ss-unico-banner');
+  const hasPerRow = ss.list !== null;
+  const ssEnabled = ss.unico !== null || hasPerRow;
+  const ssCount = ssEnabled ? (ss.unico || ss.list[0]).length : 0;
+
   if (ss.unico !== null) {
-    document.getElementById('ss-unico-val').textContent = `★ ${ss.unico}`;
+    document.getElementById('ss-unico-val').textContent = ss.unico.map(n => `★ ${n}`).join('   ');
     banner.style.display = 'flex';
   } else {
     banner.style.display = 'none';
   }
-
-  const hasPerRow = ss.list !== null;
-  const ssEnabled = ss.unico !== null || hasPerRow;
 
   document.getElementById('bets-title').textContent =
     typeLabel + (ssEnabled ? ' + SuperStar' : '');
   document.getElementById('bets-badge').textContent =
     `${bets.length} giocate · ${numsPerBet} numeri`;
 
-  // Cost — ogni giocata copre C(numsPerBet, 6) sestine; ogni sestina = €1,00 + €0,50 SS
-  const comb = combinazioni(numsPerBet, 6);          // C(N, 6)
-  const sestinePerBet  = comb;
-  const pricePerSestina = 1.00 + (ssEnabled ? 0.50 : 0.00);
-  const pricePerBet    = sestinePerBet * pricePerSestina;
-  const total          = bets.length * pricePerBet;
+  const comb = combinazioni(numsPerBet, 6);
+  const eurStr = n => '€' + n.toFixed(2).replace('.', ',');
+  const pricePerSestina = 1.00 + (ssEnabled ? ssCount * 0.50 : 0.00);
+  const pricePerBet = comb * pricePerSestina;
+  const total = bets.length * pricePerBet;
   const fmt = n => n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
-  const ssNote = ssEnabled ? ` + €0,50 SuperStar` : '';
+  const ssNote = ssEnabled
+    ? (ssCount === 1 ? ' + €0,50 SuperStar' : ` + ${eurStr(ssCount * 0.50)} SuperStar×${ssCount}`)
+    : '';
   document.getElementById('cost-total').textContent = fmt(total);
   document.getElementById('cost-detail').textContent =
     `${bets.length} giocate × ${fmt(pricePerBet)} ` +
@@ -996,7 +1028,9 @@ function renderBets(bets, ss, tipo) {
 
   bets.forEach(({ label, nums }, i) => {
     const ns = nums.map(n => String(n).padStart(2)).join('  ');
-    const ssCell = hasPerRow ? `<td class="star">★ ${ss.list[i]}</td>` : '';
+    const ssCell = hasPerRow
+      ? `<td class="star">${ss.list[i].map(n => `★ ${n}`).join('   ')}</td>`
+      : '';
     html += `<tr>
       <td class="idx">${i+1}</td>
       <td class="grp">${label}</td>
@@ -1080,6 +1114,7 @@ function generate() {
     renderStatsCard(settine, bets, tipo, doubles);
     // Popola print header
     const ssOn = document.querySelector('input[name="ss-on"]:checked').value === 'si';
+    const ssCount = ssOn ? parseInt(document.querySelector('input[name="ss-count"]:checked').value) : 0;
     const dataOra = new Date().toLocaleString('it-IT', { dateStyle: 'long', timeStyle: 'short' });
     const fissiStr = fixedNums.length ? `Numeri fissi: ${fixedNums.join(', ')}` : '';
     document.getElementById('print-info').textContent =
@@ -1087,7 +1122,7 @@ function generate() {
         `Generato il ${dataOra}`,
         `Tipo: ${tipo === 'integrale' ? 'Integrale' : 'Ridotto n−1'}`,
         `Numeri ripetuti: ${st.dup}`,
-        `SuperStar: ${ssOn ? 'Sì' : 'No'}`,
+        `SuperStar: ${ssOn ? `Sì (×${ssCount})` : 'No'}`,
         fissiStr,
       ].filter(Boolean).join('  ·  ');
 

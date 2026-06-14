@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistemi SuperEnalotto</title>
+<title>Sistemi — Lotto &amp; SuperEnalotto</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -20,6 +20,7 @@
   --green-lt:   #dcfce7;
   --radius:     10px;
   --shadow:     0 1px 4px rgba(0,0,0,.09);
+  --sidebar-w:  220px;
 }
 
 body {
@@ -31,63 +32,127 @@ body {
   line-height: 1.55;
 }
 
-/* ── Header ──────────────────────────────────────── */
+/* ── Header ──────────────────────────────── */
 header {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  padding: 1.25rem 1.5rem;
+  padding: 1.125rem 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
-header h1 {
-  font-size: 1.375rem;
-  font-weight: 700;
-  letter-spacing: -.02em;
-}
-header p {
-  font-size: .875rem;
-  color: var(--muted);
-  margin-top: .2rem;
-}
+header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -.02em; }
+header p  { font-size: .8125rem; color: var(--muted); margin-top: .15rem; }
 
-/* ── Main ────────────────────────────────────────── */
-main {
-  max-width: 860px;
+/* ── Page body ───────────────────────────── */
+.page-body {
+  display: flex;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 2rem 1rem 3rem;
 }
 
-.intro {
-  font-size: .9375rem;
+/* ── Sidebar ─────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 0 3rem;
+  position: sticky;
+  top: 57px;                  /* header height */
+  height: calc(100vh - 57px);
+  overflow-y: auto;
+}
+
+.nav-section { margin-bottom: 1.75rem; }
+
+.nav-section-hd {
+  font-size: .6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
   color: var(--muted);
-  margin-bottom: 1.75rem;
-  max-width: 560px;
+  padding: 0 1.25rem .6rem;
 }
 
-/* ── Grid sistemi ────────────────────────────────── */
+.nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  padding: .5rem 1.25rem;
+  font-size: .875rem;
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+  transition: background .1s, color .1s;
+}
+.nav-item:hover { background: var(--bg); color: var(--accent); }
+.nav-item.disabled { color: var(--muted); pointer-events: none; }
+.nav-soon {
+  font-size: .6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--muted);
+  background: #f3f4f6;
+  border: 1px solid var(--border);
+  padding: .1rem .35rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Main content ────────────────────────── */
+main {
+  flex: 1;
+  min-width: 0;
+  padding: 2rem 2rem 4rem;
+}
+
+/* ── Section header ──────────────────────── */
+.section-hd {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: .75rem;
+  border-bottom: 2px solid var(--border);
+}
+.section-hd + .section-hd,
+.systems-grid + .section-hd { margin-top: 3rem; }
+.section-title { font-size: 1.125rem; font-weight: 700; letter-spacing: -.02em; }
+.section-badge {
+  font-size: .6875rem; font-weight: 700;
+  padding: .2rem .55rem; border-radius: 999px; white-space: nowrap;
+}
+.badge-lotto { background: var(--green-lt); color: var(--green); }
+.badge-se    { background: var(--accent-lt); color: var(--accent); }
+
+/* ── Cards grid ──────────────────────────── */
 .systems-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.25rem;
 }
 
-/* ── Card sistema ────────────────────────────────── */
+/* ── Card sistema ────────────────────────── */
 .sys-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 1.5rem;
+  padding: 1.375rem 1.375rem 1.25rem;
   display: flex;
   flex-direction: column;
   gap: .875rem;
   transition: box-shadow .15s, border-color .15s;
 }
 .sys-card:not(.soon):hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,.12);
+  box-shadow: 0 4px 14px rgba(0,0,0,.12);
   border-color: #bfcfe8;
 }
-.sys-card.soon {
-  opacity: .6;
-}
+.sys-card.soon { opacity: .55; }
 
 .card-top {
   display: flex;
@@ -95,37 +160,14 @@ main {
   justify-content: space-between;
   gap: .5rem;
 }
-.sys-name {
-  font-size: 1.125rem;
-  font-weight: 700;
-  letter-spacing: -.01em;
-}
-.sys-sub {
-  font-size: .8125rem;
-  color: var(--muted);
-  margin-top: .1rem;
-}
+.sys-name { font-size: 1.0625rem; font-weight: 700; letter-spacing: -.01em; }
+.sys-sub  { font-size: .8125rem; color: var(--muted); margin-top: .1rem; }
 
-/* badge stato */
-.badge {
-  font-size: .6875rem;
-  font-weight: 700;
-  padding: .2rem .55rem;
-  border-radius: 999px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.badge-ok   { background: var(--green-lt); color: var(--green); }
-.badge-soon { background: #f3f4f6; color: var(--muted); border: 1px solid var(--border); }
+.badge-ok   { font-size: .6875rem; font-weight: 700; padding: .2rem .55rem; border-radius: 999px; white-space: nowrap; flex-shrink: 0; background: var(--green-lt); color: var(--green); }
+.badge-soon { font-size: .6875rem; font-weight: 700; padding: .2rem .55rem; border-radius: 999px; white-space: nowrap; flex-shrink: 0; background: #f3f4f6; color: var(--muted); border: 1px solid var(--border); }
 
-/* descrizione */
-.sys-desc {
-  font-size: .875rem;
-  color: var(--muted);
-  line-height: 1.55;
-}
+.sys-desc { font-size: .875rem; color: var(--muted); line-height: 1.55; }
 
-/* specifiche */
 .sys-specs {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -137,39 +179,28 @@ main {
 .spec-k { color: var(--muted); }
 .spec-v { font-weight: 500; }
 
-/* bottone */
 .btn-open {
   display: block;
-  padding: .65rem 1rem;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 7px;
-  font-size: .9375rem;
-  font-weight: 700;
-  text-align: center;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background .12s;
+  padding: .625rem 1rem;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 7px;
+  font-size: .9375rem; font-weight: 700;
+  text-align: center; text-decoration: none;
+  cursor: pointer; transition: background .12s;
   margin-top: auto;
 }
 .btn-open:hover { background: var(--accent-dk); }
 
 .btn-soon {
   display: block;
-  padding: .65rem 1rem;
-  background: var(--bg);
-  color: var(--muted);
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  font-size: .9375rem;
-  text-align: center;
-  margin-top: auto;
-  cursor: default;
+  padding: .625rem 1rem;
+  background: var(--bg); color: var(--muted);
+  border: 1px solid var(--border); border-radius: 7px;
+  font-size: .9375rem; text-align: center;
+  margin-top: auto; cursor: default;
 }
 
-
-/* ── Footer ──────────────────────────────────────── */
+/* ── Footer ──────────────────────────────── */
 footer {
   text-align: center;
   font-size: .8125rem;
@@ -178,137 +209,272 @@ footer {
   border-top: 1px solid var(--border);
   margin-top: 2rem;
 }
+
+/* ── Responsive ──────────────────────────── */
+@media (max-width: 680px) {
+  .page-body { flex-direction: column; }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: .625rem 0;
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 0;
+  }
+  .nav-section {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 0;
+    padding: 0 .5rem;
+    flex-shrink: 0;
+  }
+  .nav-section:not(:last-child)::after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+    margin: 0 .5rem;
+  }
+  .nav-section-hd { display: none; }
+  .nav-item { padding: .3rem .625rem; border-radius: 6px; white-space: nowrap; }
+
+  main { padding: 1.5rem 1rem 3rem; }
+}
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Sistemi SuperEnalotto</h1>
-  <p>Scegli il sistema da sviluppare</p>
+  <h1>Sistemi — Lotto &amp; SuperEnalotto</h1>
+  <p>Genera, gioca e calcola il costo dei tuoi sistemi</p>
 </header>
 
-<main>
-  <p class="intro">
-    Ogni sistema genera automaticamente le giocate, calcola il costo e mostra
-    le garanzie statistiche. Apri il sistema che vuoi usare.
-  </p>
+<div class="page-body">
 
-  <div class="systems-grid">
+  <!-- ── Sidebar ──────────────────────────────────────────────── -->
+  <nav class="sidebar">
 
-    <!-- ── 6×6 Cruciverba ── -->
-    <div class="sys-card">
-      <div class="card-top">
-        <div>
-          <div class="sys-name">6×6 Cruciverba</div>
-          <div class="sys-sub">Matrice 6×6 · 14 sestine dirette</div>
-        </div>
-        <span class="badge badge-ok">Disponibile</span>
-      </div>
-
-      <p class="sys-desc">
-        Griglia 6×6 con 36 numeri. Ogni riga, colonna e diagonale forma una sestina
-        pronta da giocare — nessuna riduzione necessaria. Il sistema più semplice
-        e diretto: 14 giocate da €1 ciascuna.
-      </p>
-
-      <div class="sys-specs">
-        <span class="spec-k">Sestine</span>
-        <span class="spec-v">14 · 6 righe · 6 colonne · 2 diagonali</span>
-
-        <span class="spec-k">Integrale</span>
-        <span class="spec-v">14 sestine · €14 (€21 con SuperStar)</span>
-
-        <span class="spec-k">Numeri ripetuti</span>
-        <span class="spec-v">0–10 · a scelta libera</span>
-
-        <span class="spec-k">SuperStar</span>
-        <span class="spec-v">Opzionale · unico o per giocata</span>
-      </div>
-
-      <a href="sistema_6x6.html" class="btn-open">Apri sistema →</a>
+    <div class="nav-section">
+      <div class="nav-section-hd">Lotto</div>
+      <a class="nav-item disabled" href="#lotto">
+        4×4 Ridotto
+        <span class="nav-soon">Presto</span>
+      </a>
+      <a class="nav-item" href="#lotto">5×5 Ridotto</a>
     </div>
 
-    <!-- ── 7×7 Cruciverba ── -->
-    <div class="sys-card">
-      <div class="card-top">
-        <div>
-          <div class="sys-name">7×7 Cruciverba</div>
-          <div class="sys-sub">Matrice 7×7 · 16 settine</div>
-        </div>
-        <span class="badge badge-ok">Disponibile</span>
-      </div>
-
-      <p class="sys-desc">
-        Griglia 7×7 con 49 numeri da 1 a 90. Righe, colonne e diagonali
-        formano 16 settine. Giocabile in modalità ridotta (1 sestina per settina)
-        o integrale (tutti i numeri della settina in una sola giocata).
-        Supporta 0–10 numeri ripetuti nella griglia.
-      </p>
-
-      <div class="sys-specs">
-        <span class="spec-k">Settine</span>
-        <span class="spec-v">16 · 7 righe · 7 colonne · 2 diagonali</span>
-
-        <span class="spec-k">Ridotto n−1</span>
-        <span class="spec-v">16 sestine · da €16 (€24 con SuperStar)</span>
-
-        <span class="spec-k">Integrale</span>
-        <span class="spec-v">16 × C(7,6) = 112 sestine · da €112</span>
-
-        <span class="spec-k">Numeri ripetuti</span>
-        <span class="spec-v">0–10 · a scelta libera</span>
-
-        <span class="spec-k">SuperStar</span>
-        <span class="spec-v">Opzionale · unico o per giocata</span>
-      </div>
-
-      <a href="sistema_7x7.html" class="btn-open">Apri sistema →</a>
+    <div class="nav-section">
+      <div class="nav-section-hd">SuperEnalotto</div>
+      <a class="nav-item" href="#superenalotto">6×6 Cruciverba</a>
+      <a class="nav-item" href="#superenalotto">7×7 Cruciverba</a>
+      <a class="nav-item" href="#superenalotto">8×8 Cruciverba</a>
     </div>
 
-    <!-- ── 8×8 Cruciverba ── -->
-    <div class="sys-card">
-      <div class="card-top">
-        <div>
-          <div class="sys-name">8×8 Cruciverba</div>
-          <div class="sys-sub">Matrice 8×8 · 18 ottine</div>
-        </div>
-        <span class="badge badge-ok">Disponibile</span>
-      </div>
+  </nav>
 
-      <p class="sys-desc">
-        Griglia 8×8 con ottine da 8 numeri. Ridotto n−2 produce sestine dirette
-        (6 numeri), ridotto n−1 produce settine (7 numeri), integrale gioca tutte
-        le combinazioni dell'ottina. Copertura più ampia rispetto al 7×7.
-      </p>
+  <!-- ── Main ─────────────────────────────────────────────────── -->
+  <main>
 
-      <div class="sys-specs">
-        <span class="spec-k">Ottine</span>
-        <span class="spec-v">18 · 8 righe · 8 colonne · 2 diagonali</span>
-
-        <span class="spec-k">Ridotto n−2</span>
-        <span class="spec-v">18 sestine · €18 (€27 con SuperStar)</span>
-
-        <span class="spec-k">Ridotto n−1</span>
-        <span class="spec-v">18 × C(7,6) = 126 sestine · €126</span>
-
-        <span class="spec-k">Integrale</span>
-        <span class="spec-v">18 × C(8,6) = 504 sestine · €504</span>
-
-        <span class="spec-k">Numeri ripetuti</span>
-        <span class="spec-v">0–10 · a scelta libera</span>
-
-        <span class="spec-k">SuperStar</span>
-        <span class="spec-v">Opzionale · unico o per giocata</span>
-      </div>
-
-      <a href="sistema_8x8.html" class="btn-open">Apri sistema →</a>
+    <!-- ══ LOTTO ══════════════════════════════════════════════ -->
+    <div class="section-hd" id="lotto">
+      <span class="section-title">Lotto</span>
+      <span class="section-badge badge-lotto">Quartine &amp; Terne</span>
     </div>
 
-  </div>
-</main>
+    <div class="systems-grid">
+
+      <!-- 4×4 Ridotto — placeholder -->
+      <div class="sys-card soon" id="lotto-4x4">
+        <div class="card-top">
+          <div>
+            <div class="sys-name">4×4 Ridotto</div>
+            <div class="sys-sub">Matrice 4×4 · 10 terne</div>
+          </div>
+          <span class="badge-soon">Prossimamente</span>
+        </div>
+
+        <p class="sys-desc">
+          Griglia 4×4 con quartine da 4 numeri. Sviluppo ridotto n−1:
+          ogni quartina genera 1 terna (3 numeri), per un totale di
+          10 giocate su 4 righe, 4 colonne e 2 diagonali.
+        </p>
+
+        <div class="sys-specs">
+          <span class="spec-k">Linee</span>
+          <span class="spec-v">10 · 4 righe · 4 colonne · 2 diagonali</span>
+
+          <span class="spec-k">Ridotto n−1</span>
+          <span class="spec-v">10 terne · 3 numeri per giocata</span>
+
+          <span class="spec-k">Numeri ripetuti</span>
+          <span class="spec-v">0–4 · a scelta libera</span>
+        </div>
+
+        <span class="btn-soon">In sviluppo…</span>
+      </div>
+
+      <!-- 5×5 Ridotto -->
+      <div class="sys-card" id="lotto-5x5">
+        <div class="card-top">
+          <div>
+            <div class="sys-name">5×5 Ridotto</div>
+            <div class="sys-sub">Matrice 5×5 · 12 quartine</div>
+          </div>
+          <span class="badge-ok">Disponibile</span>
+        </div>
+
+        <p class="sys-desc">
+          Griglia 5×5 con quintine da 5 numeri. Sviluppo ridotto n−1:
+          ogni quintina genera 1 quartina (4 numeri), per un totale di
+          12 giocate. Puntata configurabile su ambo, terno e quaterna
+          con prospetto vincite automatico.
+        </p>
+
+        <div class="sys-specs">
+          <span class="spec-k">Linee</span>
+          <span class="spec-v">12 · 5 righe · 5 colonne · 2 diagonali</span>
+
+          <span class="spec-k">Ridotto n−1</span>
+          <span class="spec-v">12 quartine · 4 numeri per giocata</span>
+
+          <span class="spec-k">Numeri ripetuti</span>
+          <span class="spec-v">0–6 · centro, angoli o casuale</span>
+
+          <span class="spec-k">Puntata</span>
+          <span class="spec-v">Ambo / Terno / Quaterna configurabili</span>
+        </div>
+
+        <a href="sistema_5x5_lotto.html" class="btn-open">Apri sistema →</a>
+      </div>
+
+    </div><!-- /systems-grid lotto -->
+
+    <!-- ══ SUPERENALOTTO ════════════════════════════════════════ -->
+    <div class="section-hd" id="superenalotto">
+      <span class="section-title">SuperEnalotto</span>
+      <span class="section-badge badge-se">Sestine &amp; Settine</span>
+    </div>
+
+    <div class="systems-grid">
+
+      <!-- 6×6 Cruciverba -->
+      <div class="sys-card">
+        <div class="card-top">
+          <div>
+            <div class="sys-name">6×6 Cruciverba</div>
+            <div class="sys-sub">Matrice 6×6 · 14 sestine dirette</div>
+          </div>
+          <span class="badge-ok">Disponibile</span>
+        </div>
+
+        <p class="sys-desc">
+          Griglia 6×6 con 36 numeri. Ogni riga, colonna e diagonale
+          forma una sestina pronta da giocare — nessuna riduzione
+          necessaria. Sistema integrale: 14 giocate da €1 ciascuna.
+        </p>
+
+        <div class="sys-specs">
+          <span class="spec-k">Sestine</span>
+          <span class="spec-v">14 · 6 righe · 6 colonne · 2 diagonali</span>
+
+          <span class="spec-k">Costo</span>
+          <span class="spec-v">€14 · da €21 con SuperStar</span>
+
+          <span class="spec-k">Numeri ripetuti</span>
+          <span class="spec-v">0–10 · a scelta libera</span>
+
+          <span class="spec-k">SuperStar</span>
+          <span class="spec-v">Opzionale · 1, 2 o 3 per giocata</span>
+        </div>
+
+        <a href="sistema_6x6.html" class="btn-open">Apri sistema →</a>
+      </div>
+
+      <!-- 7×7 Cruciverba -->
+      <div class="sys-card">
+        <div class="card-top">
+          <div>
+            <div class="sys-name">7×7 Cruciverba</div>
+            <div class="sys-sub">Matrice 7×7 · 16 settine</div>
+          </div>
+          <span class="badge-ok">Disponibile</span>
+        </div>
+
+        <p class="sys-desc">
+          Griglia 7×7 con 49 numeri. Righe, colonne e diagonali formano
+          16 settine. Modalità ridotta (1 sestina per settina) o integrale
+          (tutti i numeri della settina). Supporta 0–10 numeri ripetuti.
+        </p>
+
+        <div class="sys-specs">
+          <span class="spec-k">Settine</span>
+          <span class="spec-v">16 · 7 righe · 7 colonne · 2 diagonali</span>
+
+          <span class="spec-k">Ridotto n−1</span>
+          <span class="spec-v">16 sestine · da €16 (da €24 con SuperStar)</span>
+
+          <span class="spec-k">Integrale</span>
+          <span class="spec-v">16 × C(7,6) = 112 sestine · da €112</span>
+
+          <span class="spec-k">SuperStar</span>
+          <span class="spec-v">Opzionale · 1, 2 o 3 per giocata</span>
+        </div>
+
+        <a href="sistema_7x7.html" class="btn-open">Apri sistema →</a>
+      </div>
+
+      <!-- 8×8 Cruciverba -->
+      <div class="sys-card">
+        <div class="card-top">
+          <div>
+            <div class="sys-name">8×8 Cruciverba</div>
+            <div class="sys-sub">Matrice 8×8 · 18 ottine</div>
+          </div>
+          <span class="badge-ok">Disponibile</span>
+        </div>
+
+        <p class="sys-desc">
+          Griglia 8×8 con ottine da 8 numeri. Ridotto n−2 produce
+          sestine dirette, ridotto n−1 produce settine, integrale
+          gioca tutte le combinazioni. Copertura più ampia del 7×7.
+        </p>
+
+        <div class="sys-specs">
+          <span class="spec-k">Ottine</span>
+          <span class="spec-v">18 · 8 righe · 8 colonne · 2 diagonali</span>
+
+          <span class="spec-k">Ridotto n−2</span>
+          <span class="spec-v">18 sestine · €18 (da €27 con SuperStar)</span>
+
+          <span class="spec-k">Ridotto n−1</span>
+          <span class="spec-v">18 × C(7,6) = 126 sestine · €126</span>
+
+          <span class="spec-k">Integrale</span>
+          <span class="spec-v">18 × C(8,6) = 504 sestine · €504</span>
+
+          <span class="spec-k">SuperStar</span>
+          <span class="spec-v">Opzionale · 1, 2 o 3 per giocata</span>
+        </div>
+
+        <a href="sistema_8x8.html" class="btn-open">Apri sistema →</a>
+      </div>
+
+    </div><!-- /systems-grid superenalotto -->
+
+  </main>
+
+</div><!-- /page-body -->
 
 <footer>
   Il gioco è vietato ai minori · Il gioco può causare dipendenza
 </footer>
+
 </body>
 </html>
