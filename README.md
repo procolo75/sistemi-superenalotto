@@ -10,10 +10,11 @@ Generatore di sistemi a griglia per il SuperEnalotto. Tre matrici disponibili �
 
 ```
 sistemi-superenalotto/
-├── index.html          # Pagina principale — elenco dei sistemi disponibili
-├── sistema_6x6.html    # Sistema Cruciverba 6×6
-├── sistema_7x7.html    # Sistema Cruciverba 7×7
-└── sistema_8x8.html    # Sistema Cruciverba 8×8
+├── index.html              # Pagina principale — elenco dei sistemi disponibili
+├── sistema_5x5_lotto.html  # Sistema Ridotto 5×5 (Lotto)
+├── sistema_6x6.html        # Sistema Cruciverba 6×6 (SuperEnalotto)
+├── sistema_7x7.html        # Sistema Cruciverba 7×7 (SuperEnalotto)
+└── sistema_8x8.html        # Sistema Cruciverba 8×8 (SuperEnalotto)
 ```
 
 Ogni file è una pagina HTML autocontenuta: niente framework, niente server, niente build step. Basta aprire il file nel browser.
