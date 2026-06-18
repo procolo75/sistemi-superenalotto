@@ -2,7 +2,7 @@
 
 **Sito online:** https://procolo75.github.io/sistemi-superenalotto/
 
-Generatore di sistemi a griglia per il SuperEnalotto. Tre matrici disponibili — 6×6, 7×7 e 8×8 — con supporto a numeri fissi, numeri ripetuti, SuperStar e modalità ridotta o integrale. Funziona interamente nel browser, senza installazioni né dipendenze esterne.
+Generatore di sistemi a griglia per SuperEnalotto e Lotto. Cinque matrici disponibili — 4×4 e 5×5 per il Lotto, 6×6, 7×7 e 8×8 per il SuperEnalotto — con supporto a numeri fissi, numeri ripetuti, SuperStar (solo SuperEnalotto) e modalità ridotta o integrale. Funziona interamente nel browser, senza installazioni né dipendenze esterne.
 
 ---
 
@@ -11,6 +11,7 @@ Generatore di sistemi a griglia per il SuperEnalotto. Tre matrici disponibili �
 ```
 sistemi-superenalotto/
 ├── index.html              # Pagina principale — elenco dei sistemi disponibili
+├── sistema_4x4_lotto.html  # Sistema Integrale 4×4 (Lotto)
 ├── sistema_5x5_lotto.html  # Sistema Ridotto 5×5 (Lotto)
 ├── sistema_6x6.html        # Sistema Cruciverba 6×6 (SuperEnalotto)
 ├── sistema_7x7.html        # Sistema Cruciverba 7×7 (SuperEnalotto)
@@ -37,7 +38,31 @@ Non è strettamente necessario un server — i file funzionano anche aperti dire
 
 ---
 
-## I tre sistemi
+## Sistemi Lotto
+
+### 4×4 Integrale
+
+- **Griglia:** 4 righe × 4 colonne = 16 celle
+- **Gruppi:** 4 righe + 4 colonne + 2 diagonali = **10 quartine**
+- **Modalità:** solo integrale — ogni gruppo è già una quartina da giocare
+- **Costo per giocata:** configurabile (ambo + terno + quaterna)
+
+Il sistema più compatto: ogni riga, colonna e diagonale è esattamente una quartina pronta da giocare, senza bisogno di riduzione. Il prospetto vincite mostra la vincita lorda al variare dei numeri estratti sulla propria quartina.
+
+---
+
+### 5×5 Ridotto n−1
+
+- **Griglia:** 5 righe × 5 colonne = 25 celle
+- **Gruppi:** 5 righe + 5 colonne + 2 diagonali = **12 quintine**
+- **Modalità:** ridotto n−1 — da ogni quintina viene escluso 1 numero → **12 quartine**
+- **Costo per giocata:** configurabile (ambo + terno + quaterna)
+
+Dopo la generazione appare la tabella dei numeri esclusi: per ogni riga, colonna e diagonale mostra quale numero è stato scartato e quante altre quartine del sistema lo contengono ancora.
+
+---
+
+## Sistemi SuperEnalotto
 
 ### 6×6 Cruciverba
 
@@ -125,7 +150,7 @@ Se dopo 300 tentativi non è possibile generare un sistema senza combinazioni du
 
 ## Tabella numeri esclusi (sistemi ridotti)
 
-Per tutti i sistemi ridotti (7×7 ridotto n−1, 8×8 ridotto n−1 e n−2), dopo la generazione appare una tabella che mostra — per ogni riga, colonna e diagonale — quali numeri sono stati esclusi e quante altre giocate del sistema li contengono ancora. Questo permette di valutare l'esposizione del sistema a ciascun numero escluso.
+Per tutti i sistemi ridotti (5×5 Lotto n−1, 7×7 n−1, 8×8 n−1 e n−2), dopo la generazione appare una tabella che mostra — per ogni riga, colonna e diagonale — quali numeri sono stati esclusi e quante altre giocate del sistema li contengono ancora. Questo permette di valutare l'esposizione del sistema a ciascun numero escluso.
 
 ---
 
