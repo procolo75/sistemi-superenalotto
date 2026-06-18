@@ -368,26 +368,6 @@ main {
 
     <div class="cfg-row">
       <div class="cfg-lbl">
-        Posizione duplicati
-        <small>Ordine di selezione delle celle replicate</small>
-      </div>
-      <div class="cfg-ctrl">
-        <div class="radios">
-          <label class="radio-opt">
-            <input type="radio" name="dup-pos" value="centro" checked> Centro → Angoli
-          </label>
-          <label class="radio-opt">
-            <input type="radio" name="dup-pos" value="angoli"> Angoli → Centro
-          </label>
-          <label class="radio-opt">
-            <input type="radio" name="dup-pos" value="casuale"> Tutto casuale
-          </label>
-        </div>
-      </div>
-    </div>
-
-    <div class="cfg-row">
-      <div class="cfg-lbl">
         Numeri ripetuti
         <small>Duplicati nella griglia (0–10)</small>
       </div>
@@ -684,29 +664,6 @@ function combinazioni(n, k) {
   return Math.round(r);
 }
 
-// Distribuzione ipergeometrica: P(j catturati | k estratti dal gruppo, nKept tenuti, nDropped esclusi)
-function hyperGeomDist(nKept, nDropped, k) {
-  const n = nKept + nDropped;
-  const Cnk = combinazioni(n, k);
-  const out = [];
-  for (let j = Math.max(0, k - nDropped); j <= Math.min(k, nKept); j++) {
-    out.push({ j, p: combinazioni(nKept, j) * combinazioni(nDropped, k - j) / Cnk });
-  }
-  return out;
-}
-
-// P(esattamente k dei draw=6 numeri estratti cadono nel gruppo di nGroup)
-function priorP(nGroup, k, nTotal = 90, draw = 6) {
-  if (k < 0 || k > nGroup || k > draw || draw - k > nTotal - nGroup) return 0;
-  return combinazioni(nGroup, k) * combinazioni(nTotal - nGroup, draw - k) / combinazioni(nTotal, draw);
-}
-
-function fmtPct(p, dec = 1) {
-  if (p <= 0) return '—';
-  if (p >= 0.0001) return (p * 100).toFixed(dec) + '%';
-  if (p >= 0.000001) return '<0.01%';
-  return '<0.001%';
-}
 
 function parseNums(str) {
   if (!str || !str.trim()) return [];
@@ -717,70 +674,27 @@ function parseNums(str) {
 }
 
 // ─── Grid ─────────────────────────────────────────────────────────────────────
-// Sorgenti scelte per massimizzare la copertura: centro (4 settine), poi angoli,
-// poi altre celle diagonali (3 settine ciascuna). Le destinazioni puntano anch'esse
-// a celle diagonali dove possibile (anti-diag per pair 2,3,6).
+// Sorgenti scelte per massimizzare la copertura.
+// Ordine fisso angoli-first, poi centro, poi casuali.
 const PAIRS = [
-  [[3, 3], [2, 0]],   // dup  1: src=centro (4 grp)      dst=non-diag
-  [[0, 0], [5, 1]],   // dup  2: src=angolo (main+3 grp) dst=anti-diag (3 grp)
-  [[6, 6], [1, 5]],   // dup  3: src=angolo (main+3 grp) dst=anti-diag (3 grp)
-  [[0, 6], [4, 1]],   // dup  4: src=angolo (anti+3 grp) dst=non-diag
-  [[6, 0], [2, 5]],   // dup  5: src=angolo (anti+3 grp) dst=non-diag
-  [[1, 1], [2, 4]],   // dup  6: src=diag princ (3 grp)  dst=anti-diag (3 grp)
-  [[5, 5], [3, 2]],   // dup  7: src=diag princ (3 grp)  dst=non-diag
-  [[2, 2], [6, 4]],   // dup  8: src=diag princ (3 grp)  dst=non-diag
-  [[4, 4], [0, 2]],   // dup  9: src=diag princ (3 grp)  dst=non-diag
-  [[4, 2], [0, 4]],   // dup 10: src=anti-diag  (3 grp)  dst=non-diag
+  [[6, 0], [2, 5]],   // dup  1: angolo antidiag      dist=6.0
+  [[0, 6], [4, 1]],   // dup  2: angolo antidiag      dist=6.0
+  [[6, 6], [1, 5]],   // dup  3: angolo maindiag      dist=6.0
+  [[0, 0], [5, 1]],   // dup  4: angolo maindiag      dist=6.0
+  [[3, 3], [2, 0]],   // dup  5: centro principale    dist=0
+  [[2, 2], [6, 4]],   // dup  6: casuale inner maindiag  dist=2.0
+  [[4, 4], [0, 2]],   // dup  7: casuale inner maindiag  dist=2.0
+  [[4, 2], [0, 4]],   // dup  8: casuale antidiag        dist=2.0
+  [[1, 1], [2, 4]],   // dup  9: casuale inner maindiag  dist=4.0
+  [[5, 5], [3, 2]],   // dup 10: casuale inner maindiag  dist=4.0
 ];
 
-// Ordina le PAIRS in 3 fasce per distanza Manhattan dal centro:
-//   centroGrp (40% più vicini) → angoliGrp (40% più lontani) → shuffle(medioGrp)
-function getOrderedPairs(strategy) {
-  const N = 7;
-  const cx = (N - 1) / 2;  // 3.0
-
-  const withDist = PAIRS.map((p, i) => {
-    const [rs, cs] = p[0];
-    return { p, dist: Math.abs(rs - cx) + Math.abs(cs - cx), i };
-  });
-
-  if (strategy === 'casuale') {
-    const a = [...withDist];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a.map(x => x.p);
-  }
-
-  const byDist = [...withDist].sort((a, b) => a.dist - b.dist || a.i - b.i);
-  const minDist = byDist[0].dist;
-  const maxDist = byDist[byDist.length - 1].dist;
-
-  const centroGrp = byDist.filter(x => x.dist === minDist);
-  const angoliGrp = [...byDist.filter(x => x.dist === maxDist)].reverse();
-  const medioArr  = byDist.filter(x => x.dist !== minDist && x.dist !== maxDist);
-
-  const medioGrp = [...medioArr];
-  for (let i = medioGrp.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [medioGrp[i], medioGrp[j]] = [medioGrp[j], medioGrp[i]];
-  }
-
-  const order = strategy === 'centro'
-    ? [...centroGrp, ...angoliGrp, ...medioGrp]
-    : [...angoliGrp, ...centroGrp, ...medioGrp];
-
-  return order.map(x => x.p);
-}
-
-function buildGrid(numDup, fixedNums, strategy) {
+function buildGrid(numDup, fixedNums) {
   const grid = Array.from({length: 7}, (_, r) =>
     Array.from({length: 7}, (_, c) => 7 * r + c + 1));
 
-  const orderedPairs = getOrderedPairs(strategy);
   for (let i = 0; i < numDup; i++) {
-    const [[rs, cs], [rd, cd]] = orderedPairs[i];
+    const [[rs, cs], [rd, cd]] = PAIRS[i];
     grid[rd][cd] = grid[rs][cs];
   }
 
@@ -1094,8 +1008,7 @@ function generate() {
     let tries = 0;
 
     do {
-      const strategy = document.querySelector('input[name="dup-pos"]:checked').value;
-      grid = buildGrid(st.dup, fixedNums, strategy);
+      grid = buildGrid(st.dup, fixedNums);
       const v = verifyGrid(grid);
       if (v.errors.length) throw new Error('Verifica: ' + v.errors.join(' · '));
       doubles = v.doubles;

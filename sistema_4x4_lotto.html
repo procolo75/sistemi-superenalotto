@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema 5×5 — Lotto</title>
+<title>Sistema 4×4 — Lotto</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -135,6 +135,7 @@ main {
   transition: border-color .15s; color: var(--text); background: var(--surface);
 }
 .txt-inp:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,86,219,.12); }
+.txt-inp.narrow { max-width: 140px; }
 
 .divider { border: none; border-top: 1px solid var(--border); margin: 1.125rem 0; }
 
@@ -204,16 +205,6 @@ main {
 .idx  { color: var(--muted); width: 2rem; }
 .grp  { color: var(--muted); font-size: .8125rem; width: 8.5rem; }
 
-.excl-tbl { width: 100%; border-collapse: collapse; font-size: .8125rem; }
-.excl-tbl th { padding: .35rem .75rem; border-bottom: 2px solid var(--border); text-align: left; font-size: .6875rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
-.excl-tbl td { padding: .375rem .75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
-.excl-tbl tr:last-child td { border-bottom: none; }
-.tag { display: inline-block; padding: .1rem .45rem; border-radius: 4px; font-size: .75rem; font-weight: 600; }
-.tag-rep  { background: var(--double-bg); border: 1px solid var(--double-brd); color: #78350f; }
-.tag-norm { background: #f3f4f6; border: 1px solid #d1d5db; color: #374151; }
-.tag-ok   { background: var(--accent-lt); color: var(--accent); border-radius: 999px; }
-.tag-zero { background: #fee2e2; color: #991b1b; border-radius: 999px; }
-.warn-note { margin-top: .625rem; padding: .5rem .75rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; font-size: .8125rem; color: #92400e; }
 .stats-note { font-size: .8125rem; color: var(--muted); line-height: 1.5; margin-bottom: .625rem; }
 
 .vinc-tbl { border-collapse: collapse; width: 100%; font-size: .875rem; font-variant-numeric: tabular-nums; }
@@ -237,8 +228,8 @@ main {
 <header>
   <a href="index.html" class="back-btn">← Sistemi</a>
   <div class="header-title">
-    <h1>Sistema 5×5 Lotto</h1>
-    <span class="sub">Lotto — matrice 5×5, sviluppo ridotto n−1 (12 quartine)</span>
+    <h1>Sistema 4×4 Lotto</h1>
+    <span class="sub">Lotto — matrice 4×4, sviluppo integrale (10 quartine)</span>
   </div>
 </header>
 
@@ -257,13 +248,13 @@ main {
       </div>
       <div class="cfg-ctrl">
         <select id="dup-sel" onchange="st.dup = +this.value">
-          <option value="0">0 — tutti distinti (25 numeri)</option>
-          <option value="1">1 — un ripetuto (24 numeri distinti)</option>
-          <option value="2">2 — due ripetuti (23 numeri distinti)</option>
-          <option value="3">3 — tre ripetuti (22 numeri distinti)</option>
-          <option value="4" selected>4 — quattro ripetuti (21 numeri distinti)</option>
-          <option value="5">5 — cinque ripetuti (20 numeri distinti)</option>
-          <option value="6">6 — sei ripetuti (19 numeri distinti)</option>
+          <option value="0">0 — tutti distinti (16 numeri)</option>
+          <option value="1">1 — un ripetuto (15 numeri distinti)</option>
+          <option value="2">2 — due ripetuti (14 numeri distinti)</option>
+          <option value="3">3 — tre ripetuti (13 numeri distinti)</option>
+          <option value="4" selected>4 — quattro ripetuti (12 numeri distinti)</option>
+          <option value="5">5 — cinque ripetuti (11 numeri distinti)</option>
+          <option value="6">6 — sei ripetuti (10 numeri distinti)</option>
         </select>
       </div>
     </div>
@@ -336,13 +327,13 @@ main {
   </div>
 
   <div class="print-hd" id="print-hd">
-    <h2>Sistema Lotto 5×5 — Sviluppo Ridotto n−1 (Quartine)</h2>
+    <h2>Sistema Lotto 4×4 — Sviluppo Integrale (Quartine)</h2>
     <p id="print-info"></p>
   </div>
 
   <div class="card">
     <div class="result-hd">
-      <h2>Matrice 5×5</h2>
+      <h2>Matrice 4×4</h2>
       <span class="badge" id="grid-badge"></span>
     </div>
     <div class="grid-wrap">
@@ -353,7 +344,7 @@ main {
 
   <div class="card">
     <div class="result-hd">
-      <h2>Quartine — Sviluppo Ridotto n−1</h2>
+      <h2>Quartine — Sviluppo Integrale</h2>
       <span class="badge" id="bets-badge"></span>
     </div>
     <div id="cost-note" class="cost-note" style="display:none">
@@ -370,18 +361,6 @@ main {
     </div>
     <p class="stats-note">Vincita lorda al variare dei numeri estratti nella tua quartina. I valori si aggiornano al cambio della puntata.</p>
     <div id="vincite-table"></div>
-  </div>
-
-  <div class="card" id="stats-ridotto">
-    <div class="result-hd">
-      <h2>Numero escluso per ogni riga / colonna / diagonale</h2>
-      <span class="badge">Ridotto n−1</span>
-    </div>
-    <p class="stats-note">
-      Se il numero escluso viene estratto, quante altre quartine del sistema lo catturano ancora?
-      "0 giocate" = se esce, il sistema non lo prende da nessuna parte.
-    </p>
-    <div id="excl-analysis"></div>
   </div>
 
 </div>
@@ -421,29 +400,22 @@ function parseNums(str) {
   )];
 }
 
-// ─── Grid 5×5 ────────────────────────────────────────────────────────────────
-// Coppie (sorgente, destinazione) per duplicati.
-// Vincoli: rd≠rs, cd≠cs, non entrambi sulla stessa diagonale.
-// Diagonale principale: r==c. Anti-diagonale: r+c==4.
-//
-// Gruppo angoli  (indici 0-3): 4 angoli della griglia
-// Gruppo centro  (indice 4):   cella centrale (2,2)
-// Gruppo casuale (indice 5):   cella interna secondaria
-//
-// Ordine fisso angoli-first, poi centro, poi casuali.
-// Angoli main-diag → anti-diag inner (coverage 6).
-// Angoli anti-diag → non-diag (evita conflitto strutturale diag≡diag).
+// ─── Grid 4×4 ────────────────────────────────────────────────────────────────
+// Coppie (src, dst) per duplicati — ordine fisso, nessun shuffle.
+// Dup 1-2: angoli main-diag → celle NON-diagonali (copertura 5).
+// Dup 3-4: celle centrali main-diag → corner anti-diag (copertura 6).
+// Dup 5-6: non-diag → anti-diag interne (copertura 5, le ultime libere).
 const PAIRS = [
-  [[0, 0], [1, 3]],   // dup 1 — angolo main-diag → anti-diag inner         6 linee
-  [[4, 4], [3, 1]],   // dup 2 — angolo main-diag → anti-diag inner         6 linee
-  [[0, 4], [3, 2]],   // dup 3 — angolo anti-diag → non-diag                5 linee
-  [[4, 0], [1, 2]],   // dup 4 — angolo anti-diag → non-diag                5 linee
-  [[2, 2], [0, 3]],   // dup 5 — centro (su entrambe le diag) → non-diag   6 linee
-  [[1, 1], [4, 3]],   // dup 6 — casuale inner main-diag → non-diag        5 linee
+  [[0, 0], [2, 3]],   // dup 1: angolo main-diag → non-diag           copertura 5
+  [[3, 3], [1, 0]],   // dup 2: angolo main-diag → non-diag           copertura 5
+  [[1, 1], [0, 3]],   // dup 3: centro main-diag → corner anti-diag   copertura 6
+  [[2, 2], [3, 0]],   // dup 4: centro main-diag → corner anti-diag   copertura 6
+  [[0, 2], [2, 1]],   // dup 5: casuale → inner anti-diag             copertura 5
+  [[3, 1], [1, 2]],   // dup 6: casuale → inner anti-diag             copertura 5
 ];
 
 function buildGrid(numDup, fixedNums) {
-  const N = 5;
+  const N = 4;
   const grid = Array.from({length: N}, (_, r) =>
     Array.from({length: N}, (_, c) => N * r + c + 1));
 
@@ -469,7 +441,7 @@ function buildGrid(numDup, fixedNums) {
 }
 
 function verifyGrid(grid) {
-  const N = 5;
+  const N = 4;
   const errors = [];
   for (let i = 0; i < N; i++)
     if (new Set(grid[i]).size !== N) errors.push(`Riga ${i+1} ha duplicati`);
@@ -486,87 +458,24 @@ function verifyGrid(grid) {
   return { errors, doubles };
 }
 
-// ─── Quintine (12 linee della griglia) ───────────────────────────────────────
-function getQuintine(grid) {
-  const N = 5;
+// ─── Quartine: 4 righe + 4 colonne + 2 diagonali ────────────────────────────
+function getQuartine(grid) {
+  const N = 4;
   const q = [];
-  for (let i = 0; i < N; i++) q.push({ label: `Riga ${i+1}`,    nums: [...grid[i]] });
-  for (let j = 0; j < N; j++) q.push({ label: `Colonna ${j+1}`, nums: grid.map(r => r[j]) });
-  q.push({ label: 'Diagonale ↘', nums: grid.map((r, i) => r[i]) });
-  q.push({ label: 'Diagonale ↙', nums: grid.map((r, i) => r[N-1-i]) });
+  for (let i = 0; i < N; i++)
+    q.push({ label: `Riga ${i+1}`,    nums: [...grid[i]].sort((a, b) => a - b) });
+  for (let j = 0; j < N; j++)
+    q.push({ label: `Colonna ${j+1}`, nums: grid.map(r => r[j]).sort((a, b) => a - b) });
+  q.push({ label: 'Diagonale ↘', nums: grid.map((r, i) => r[i]).sort((a, b) => a - b) });
+  q.push({ label: 'Diagonale ↙', nums: grid.map((r, i) => r[N-1-i]).sort((a, b) => a - b) });
   return q;
-}
-
-// ─── Sviluppo ridotto n-1: 1 quartina per linea ───────────────────────────────
-// Regole:
-//   • ogni numero ripetuto può essere escluso al massimo 2 volte in totale
-//   • ogni numero non ripetuto deve comparire in almeno una quartina
-//
-// Fase 1 (greedy): per ogni quintina esclude il numero con la copertura
-//   maggiore (appare in più linee), rispettando il limite di 2 esclusioni.
-// Fase 2 (repair): se un numero distinto non appare in nessuna quartina,
-//   trova una linea che lo contiene e scambia l'escluso con un alternativo
-//   già coperto altrove (senza superare il limite di 2 esclusioni).
-function getBetsRidotto(quintine) {
-  const cov = {};
-  quintine.forEach(({ nums }) => nums.forEach(n => { cov[n] = (cov[n]||0) + 1; }));
-
-  const countExcl = (bets, n, skipIdx = -1) =>
-    bets.filter((b, j) => j !== skipIdx && b.excl === n).length;
-
-  // Fase 1
-  const exclCount = {};
-  let bets = quintine.map(({ label, nums }) => {
-    const candidates = nums.filter(n => (exclCount[n] || 0) < 2);
-    const pool = candidates.length > 0 ? candidates : nums;
-    const excl = pool.reduce((a, b) => cov[a] >= cov[b] ? a : b);
-    exclCount[excl] = (exclCount[excl] || 0) + 1;
-    return {
-      label,
-      allNums: [...nums],
-      excl,
-      nums: nums.filter(n => n !== excl).sort((a, b) => a - b),
-    };
-  });
-
-  // Fase 2 — garantisce che ogni numero distinto appaia in almeno una quartina
-  const allDistinct = [...new Set(quintine.flatMap(q => q.nums))];
-
-  for (let iter = 0; iter < allDistinct.length; iter++) {
-    const inQuartina = new Set(bets.flatMap(b => b.nums));
-    const uncovered  = allDistinct.filter(n => !inQuartina.has(n));
-    if (uncovered.length === 0) break;
-
-    const un = uncovered[0];
-    for (let i = 0; i < bets.length; i++) {
-      if (!bets[i].allNums.includes(un)) continue;
-
-      const alts = bets[i].allNums
-        .filter(n => n !== un)
-        .filter(n => countExcl(bets, n, i) < 2)
-        .filter(n => bets.some((b, j) => j !== i && b.nums.includes(n)))
-        .sort((a, b) => cov[b] - cov[a]);
-
-      if (alts.length > 0) {
-        const newExcl = alts[0];
-        bets[i] = {
-          ...bets[i],
-          excl: newExcl,
-          nums: bets[i].allNums.filter(n => n !== newExcl).sort((a, b) => a - b),
-        };
-        break;
-      }
-    }
-  }
-
-  return bets;
 }
 
 // ─── Verifica combinazioni duplicate ─────────────────────────────────────────
 function hasDuplicateCombos(bets) {
   const seen = new Set();
   for (const { nums } of bets) {
-    const key = [...nums].sort((a, b) => a - b).join(',');
+    const key = nums.join(',');
     if (seen.has(key)) return true;
     seen.add(key);
   }
@@ -605,13 +514,12 @@ function updateCost() {
   const { ambo, terno, quaterna } = getStakes();
   const costPerBet = ambo + terno + quaterna;
 
-  // Costo totale sistema
   document.getElementById('cost-total').textContent  = fmt(lastBets.length * costPerBet);
   document.getElementById('cost-detail').textContent =
     `${lastBets.length} quartine × ${fmt(costPerBet)}` +
     `  [ambo ${fmt(ambo)} + terno ${fmt(terno)} + quaterna ${fmt(quaterna)}]`;
 
-  // Prospetto vincite per quartina
+  // Prospetto vincite per quartina (4 numeri)
   // 2 estratti: 1 ambo  →  (ambo/6) × 250
   // 3 estratti: 3 ambi + 1 terno  →  (ambo/6)×3×250 + (terno/4)×4500
   // 4 estratti: 6 ambi + 4 terne + 1 quaterna  →  ambo×250 + terno×4500 + quaterna×120000
@@ -673,75 +581,38 @@ function renderBets(bets) {
   document.getElementById('bets-tbl').innerHTML = html;
 }
 
-// ─── Render: card analisi esclusi ─────────────────────────────────────────────
-function renderStatsCard(bets, doubles) {
-  const doubleSet = new Set(doubles);
-  const betCov = {};
-  bets.forEach(({ nums }) => nums.forEach(x => { betCov[x] = (betCov[x]||0) + 1; }));
-
-  let html = '<table class="excl-tbl"><thead><tr>';
-  html += '<th>Riga / Colonna / Diagonale</th><th>Num. escluso</th><th>Tipo</th><th>Coperto da</th>';
-  html += '</tr></thead><tbody>';
-
-  let nZero = 0;
-  bets.forEach(({ label, excl }) => {
-    const isRep    = doubleSet.has(excl);
-    const captured = betCov[excl] || 0;
-    if (captured === 0) nZero++;
-    const typeTag = isRep
-      ? '<span class="tag tag-rep">Ripetuto</span>'
-      : '<span class="tag tag-norm">Normale</span>';
-    const covTag = captured === 0
-      ? '<span class="tag tag-zero">⚠ 0 giocate</span>'
-      : `<span class="tag tag-ok">✓ ${captured} giocata${captured > 1 ? 'e' : ''}</span>`;
-    html += `<tr>
-      <td class="grp">${label}</td>
-      <td><strong>${excl}</strong></td>
-      <td>${typeTag}</td>
-      <td>${covTag}</td>
-    </tr>`;
-  });
-
-  html += '</tbody></table>';
-  if (nZero > 0) {
-    html += `<div class="warn-note">⚠ <strong>${nZero} ${nZero === 1 ? 'numero non compare' : 'numeri non compaiono'}</strong> in nessuna quartina: se estratt${nZero === 1 ? 'o' : 'i'}, non vengono catturati.</div>`;
-  }
-  document.getElementById('excl-analysis').innerHTML = html;
-}
-
 // ─── Generate ──────────────────────────────────────────────────────────────────
 function generate() {
   hideErr();
+  st.dup = +document.getElementById('dup-sel').value;
   const fixedNums = parseNums(document.getElementById('fixed-in').value);
 
   try {
     const MAX_TRIES = 300;
-    let grid, doubles, quintine, bets;
+    let grid, doubles, quartine;
     let tries = 0;
 
     do {
-      grid    = buildGrid(st.dup, fixedNums);
-      const v = verifyGrid(grid);
+      grid     = buildGrid(st.dup, fixedNums);
+      const v  = verifyGrid(grid);
       if (v.errors.length) throw new Error('Verifica: ' + v.errors.join(' · '));
       doubles  = v.doubles;
-      quintine = getQuintine(grid);
-      bets     = getBetsRidotto(quintine);
+      quartine = getQuartine(grid);
       tries++;
-    } while (hasDuplicateCombos(bets) && tries < MAX_TRIES);
+    } while (hasDuplicateCombos(quartine) && tries < MAX_TRIES);
 
-    if (hasDuplicateCombos(bets))
+    if (hasDuplicateCombos(quartine))
       throw new Error('Impossibile generare un sistema senza quartine duplicate. Prova a ridurre i numeri ripetuti.');
 
     renderGrid(grid, doubles);
-    renderBets(bets);
-    renderStatsCard(bets, doubles);
+    renderBets(quartine);
 
     const dataOra = new Date().toLocaleString('it-IT', { dateStyle: 'long', timeStyle: 'short' });
     const fissiStr = fixedNums.length ? `Numeri fissi: ${fixedNums.join(', ')}` : '';
     document.getElementById('print-info').textContent =
       [
         `Generato il ${dataOra}`,
-        `Sviluppo: ridotto n−1`,
+        `Sviluppo: integrale`,
         `Numeri ripetuti: ${st.dup}`,
         fissiStr,
       ].filter(Boolean).join('  ·  ');
@@ -811,7 +682,7 @@ async function salvaPDF() {
     }
 
     const d = new Date().toLocaleDateString('it-IT').replace(/\//g, '-');
-    pdf.save(`sistema_5x5_lotto_${d}.pdf`);
+    pdf.save(`sistema_4x4_lotto_${d}.pdf`);
   } catch(err) {
     console.error(err);
     alert('Generazione PDF non riuscita.\nUsa Ctrl+P → "Salva come PDF" come alternativa.');

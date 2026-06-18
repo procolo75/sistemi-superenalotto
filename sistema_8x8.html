@@ -328,26 +328,6 @@ main {
 
     <div class="cfg-row">
       <div class="cfg-lbl">
-        Posizione duplicati
-        <small>Quali celle vengono replicate per prime</small>
-      </div>
-      <div class="cfg-ctrl">
-        <div class="radios">
-          <label class="radio-opt">
-            <input type="radio" name="dup-pos" value="centro" checked> Centro → Angoli
-          </label>
-          <label class="radio-opt">
-            <input type="radio" name="dup-pos" value="angoli"> Angoli → Centro
-          </label>
-          <label class="radio-opt">
-            <input type="radio" name="dup-pos" value="casuale"> Tutto casuale
-          </label>
-        </div>
-      </div>
-    </div>
-
-    <div class="cfg-row">
-      <div class="cfg-lbl">
         Numeri ripetuti
         <small>Duplicati nella griglia (0–10)</small>
       </div>
@@ -671,73 +651,28 @@ function parseNums(str) {
 // Coppie (sorgente, destinazione) per duplicati:
 // - src scelte da celle ad alta copertura (diagonali, centro)
 // - dst in celle normali che non condividono riga/colonna/diagonale con src
-// Coordinate 0-indicizzate, griglia 8×8
-// Anti-diagonale: r + c = 7
-// Diagonale principale: r == c
+// Coordinate 0-indicizzate, griglia 8×8. Anti-diagonale: r + c = 7.
+// Ordine fisso angoli-first, poi centro, poi casuali.
 const PAIRS = [
-  [[3, 3], [0, 1]],   // dup  1: src=diag principale centro     dst=normale
-  [[4, 4], [7, 6]],   // dup  2: src=diag principale centro     dst=normale
-  [[3, 4], [0, 6]],   // dup  3: src=anti-diag centro           dst=normale
-  [[4, 3], [7, 1]],   // dup  4: src=anti-diag centro           dst=normale
-  [[0, 0], [5, 2]],   // dup  5: src=angolo diag principale     dst=normale
-  [[7, 7], [2, 5]],   // dup  6: src=angolo diag principale     dst=normale
-  [[0, 7], [3, 1]],   // dup  7: src=angolo anti-diag           dst=normale
-  [[7, 0], [4, 6]],   // dup  8: src=angolo anti-diag           dst=normale
-  [[1, 1], [6, 4]],   // dup  9: src=diag principale            dst=normale
-  [[6, 6], [1, 3]],   // dup 10: src=diag principale            dst=normale
+  [[7, 0], [4, 6]],   // dup  1: angolo antidiag      dist=7.0
+  [[0, 7], [3, 1]],   // dup  2: angolo antidiag      dist=7.0
+  [[7, 7], [2, 5]],   // dup  3: angolo maindiag      dist=7.0
+  [[0, 0], [5, 2]],   // dup  4: angolo maindiag      dist=7.0
+  [[3, 3], [0, 1]],   // dup  5: centro maindiag      dist=1.0
+  [[4, 4], [7, 6]],   // dup  6: centro maindiag      dist=1.0
+  [[3, 4], [0, 6]],   // dup  7: centro antidiag      dist=1.0
+  [[4, 3], [7, 1]],   // dup  8: centro antidiag      dist=1.0
+  [[1, 1], [6, 4]],   // dup  9: casuale inner maindiag  dist=5.0
+  [[6, 6], [1, 3]],   // dup 10: casuale inner maindiag  dist=5.0
 ];
 
-// Ordina le PAIRS in 3 fasce per distanza Manhattan dal centro:
-//   centroGrp (40% più vicini) → angoliGrp (40% più lontani) → shuffle(medioGrp)
-function getOrderedPairs(strategy) {
+function buildGrid(numDup, fixedNums) {
   const N = 8;
-  const cx = (N - 1) / 2;  // 3.5
-
-  const withDist = PAIRS.map((p, i) => {
-    const [rs, cs] = p[0];
-    return { p, dist: Math.abs(rs - cx) + Math.abs(cs - cx), i };
-  });
-
-  if (strategy === 'casuale') {
-    const a = [...withDist];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a.map(x => x.p);
-  }
-
-  const byDist = [...withDist].sort((a, b) => a.dist - b.dist || a.i - b.i);
-  const minDist = byDist[0].dist;
-  const maxDist = byDist[byDist.length - 1].dist;
-
-  const centroGrp = byDist.filter(x => x.dist === minDist);
-  const angoliGrp = [...byDist.filter(x => x.dist === maxDist)].reverse();
-  const medioArr  = byDist.filter(x => x.dist !== minDist && x.dist !== maxDist);
-
-  const medioGrp = [...medioArr];
-  for (let i = medioGrp.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [medioGrp[i], medioGrp[j]] = [medioGrp[j], medioGrp[i]];
-  }
-
-  const order = strategy === 'centro'
-    ? [...centroGrp, ...angoliGrp, ...medioGrp]
-    : [...angoliGrp, ...centroGrp, ...medioGrp];
-
-  return order.map(x => x.p);
-}
-
-function buildGrid(numDup, fixedNums, strategy) {
-  const N = 8;
-  // Griglia iniziale con valori 1..64
   const grid = Array.from({length: N}, (_, r) =>
     Array.from({length: N}, (_, c) => N * r + c + 1));
 
-  // Applica duplicati nell'ordine scelto
-  const orderedPairs = getOrderedPairs(strategy);
   for (let i = 0; i < numDup; i++) {
-    const [[rs, cs], [rd, cd]] = orderedPairs[i];
+    const [[rs, cs], [rd, cd]] = PAIRS[i];
     grid[rd][cd] = grid[rs][cs];
   }
 
@@ -1155,8 +1090,7 @@ function generate() {
     let tries = 0;
 
     do {
-      const strategy = document.querySelector('input[name="dup-pos"]:checked').value;
-      grid = buildGrid(st.dup, fixedNums, strategy);
+      grid = buildGrid(st.dup, fixedNums);
       const v = verifyGrid(grid);
       if (v.errors.length) throw new Error('Verifica: ' + v.errors.join(' · '));
       doubles = v.doubles;
