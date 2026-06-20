@@ -135,6 +135,7 @@ main {
   transition: border-color .15s; color: var(--text); background: var(--surface);
 }
 .txt-inp:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,86,219,.12); }
+.txt-inp.narrow { max-width: 140px; }
 
 .divider { border: none; border-top: 1px solid var(--border); margin: 1.125rem 0; }
 
@@ -252,6 +253,25 @@ main {
 
     <div class="cfg-row">
       <div class="cfg-lbl">
+        Tipo sviluppo
+        <small>Ridotto o Integrale</small>
+      </div>
+      <div class="cfg-ctrl">
+        <div class="radios">
+          <label class="radio-opt">
+            <input type="radio" name="sviluppo" value="ridotto" checked onchange="setSviluppo('ridotto')">
+            Ridotto n−1 (Quartine)
+          </label>
+          <label class="radio-opt">
+            <input type="radio" name="sviluppo" value="integrale" onchange="setSviluppo('integrale')">
+            Integrale (Cinquine)
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="cfg-row">
+      <div class="cfg-lbl">
         Numeri ripetuti
         <small>Duplicati nella griglia (0–6)</small>
       </div>
@@ -321,6 +341,17 @@ main {
       </div>
     </div>
 
+    <div class="cfg-row" id="row-cinquina" style="display:none">
+      <div class="cfg-lbl">
+        Cinquina
+        <small>step €0,10</small>
+      </div>
+      <div class="cfg-ctrl">
+        <input class="txt-inp narrow" type="number" id="stake-cinquina"
+               min="0.10" step="0.10" value="0.10" oninput="updateCost()">
+      </div>
+    </div>
+
   </div>
 
   <hr class="divider">
@@ -351,9 +382,9 @@ main {
     <div class="dup-note" id="dup-note"></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="bets-card">
     <div class="result-hd">
-      <h2>Quartine — Sviluppo Ridotto n−1</h2>
+      <h2 id="bets-title">Quartine — Sviluppo Ridotto n−1</h2>
       <span class="badge" id="bets-badge"></span>
     </div>
     <div id="cost-note" class="cost-note" style="display:none">
@@ -366,9 +397,9 @@ main {
   <div class="card" id="vincite-card">
     <div class="result-hd">
       <h2>Prospetto Vincite</h2>
-      <span class="badge">per singola quartina · per ruota</span>
+      <span class="badge" id="vincite-badge">per singola quartina · per ruota</span>
     </div>
-    <p class="stats-note">Vincita lorda al variare dei numeri estratti nella tua quartina. I valori si aggiornano al cambio della puntata.</p>
+    <p class="stats-note" id="vincite-note">Vincita lorda al variare dei numeri estratti nella tua quartina. I valori si aggiornano al cambio della puntata.</p>
     <div id="vincite-table"></div>
   </div>
 
@@ -392,10 +423,15 @@ main {
 'use strict';
 
 // ─── State ────────────────────────────────────────────────────────────────────
-const st = { dup: 4 };
+const st = { dup: 4, sviluppo: 'ridotto' };
 let lastBets = null;
 
 // ─── UI helpers ───────────────────────────────────────────────────────────────
+function setSviluppo(val) {
+  st.sviluppo = val;
+  document.getElementById('row-cinquina').style.display = val === 'integrale' ? '' : 'none';
+}
+
 function showErr(msg) {
   const el = document.getElementById('err-msg');
   el.textContent = msg;
@@ -562,6 +598,14 @@ function getBetsRidotto(quintine) {
   return bets;
 }
 
+// ─── Sviluppo integrale: le 12 quintine giocate direttamente ─────────────────
+function getBetsIntegrale(quintine) {
+  return quintine.map(({ label, nums }) => ({
+    label,
+    nums: [...nums].sort((a, b) => a - b),
+  }));
+}
+
 // ─── Verifica combinazioni duplicate ─────────────────────────────────────────
 function hasDuplicateCombos(bets) {
   const seen = new Set();
@@ -596,68 +640,105 @@ function getStakes() {
   const ambo     = Math.max(0.50, parseFloat(document.getElementById('stake-ambo').value)     || 0.50);
   const terno    = Math.max(0.10, parseFloat(document.getElementById('stake-terno').value)    || 0.10);
   const quaterna = Math.max(0.10, parseFloat(document.getElementById('stake-quaterna').value) || 0.10);
-  return { ambo, terno, quaterna };
+  const cinquina = Math.max(0.10, parseFloat(document.getElementById('stake-cinquina').value) || 0.10);
+  return { ambo, terno, quaterna, cinquina };
 }
 
 function updateCost() {
   if (!lastBets) return;
   const fmt = n => n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
-  const { ambo, terno, quaterna } = getStakes();
-  const costPerBet = ambo + terno + quaterna;
-
-  // Costo totale sistema
-  document.getElementById('cost-total').textContent  = fmt(lastBets.length * costPerBet);
-  document.getElementById('cost-detail').textContent =
-    `${lastBets.length} quartine × ${fmt(costPerBet)}` +
-    `  [ambo ${fmt(ambo)} + terno ${fmt(terno)} + quaterna ${fmt(quaterna)}]`;
-
-  // Prospetto vincite per quartina
-  // 2 estratti: 1 ambo  →  (ambo/6) × 250
-  // 3 estratti: 3 ambi + 1 terno  →  (ambo/6)×3×250 + (terno/4)×4500
-  // 4 estratti: 6 ambi + 4 terne + 1 quaterna  →  ambo×250 + terno×4500 + quaterna×120000
-  const w2a = ambo / 6 * 250;
-  const w3a = ambo / 6 * 3 * 250;
-  const w3t = terno / 4 * 4500;
-  const w4a = ambo * 250;
-  const w4t = terno * 4500;
-  const w4q = quaterna * 120000;
-
+  const { ambo, terno, quaterna, cinquina } = getStakes();
   const dash = '<span class="v-dash">—</span>';
-  const rows = [
-    { label: '2 estratti',
-      a: fmt(w2a),          t: dash,         q: dash,      tot: w2a,              top: false },
-    { label: '3 estratti',
-      a: fmt(w3a),          t: fmt(w3t),     q: dash,      tot: w3a + w3t,        top: false },
-    { label: '4 estratti',
-      a: fmt(w4a),          t: fmt(w4t),     q: fmt(w4q),  tot: w4a + w4t + w4q,  top: true  },
-  ];
 
-  let html = `<table class="vinc-tbl"><thead><tr>
-    <th>Estratti</th><th>Ambo</th><th>Terno</th><th>Quaterna</th><th>Totale</th>
-  </tr></thead><tbody>`;
-  rows.forEach(({ label, a, t, q, tot, top }) => {
-    const cls = top ? ' class="v-top"' : '';
-    html += `<tr${cls}>
-      <td>${label}</td><td>${a}</td><td>${t}</td><td>${q}</td>
-      <td class="v-total">${fmt(tot)}</td>
-    </tr>`;
-  });
-  html += '</tbody></table>';
-  document.getElementById('vincite-table').innerHTML = html;
+  if (st.sviluppo === 'integrale') {
+    // Cinquina (5 numeri): C(5,2)=10 ambi, C(5,3)=10 terni, C(5,4)=5 quaterne, C(5,5)=1 cinquina
+    const costPerBet = ambo + terno + quaterna + cinquina;
+    document.getElementById('cost-total').textContent  = fmt(lastBets.length * costPerBet);
+    document.getElementById('cost-detail').textContent =
+      `${lastBets.length} cinquine × ${fmt(costPerBet)}` +
+      `  [ambo ${fmt(ambo)} + terno ${fmt(terno)} + quaterna ${fmt(quaterna)} + cinquina ${fmt(cinquina)}]`;
+
+    const w2a = (ambo / 10) * 250;
+    const w3a = 3 * (ambo / 10) * 250,  w3t = (terno / 10) * 4500;
+    const w4a = 6 * (ambo / 10) * 250,  w4t = 4 * (terno / 10) * 4500, w4q = (quaterna / 5) * 120000;
+    const w5a = ambo * 250,              w5t = terno * 4500,             w5q = quaterna * 120000, w5c = cinquina * 6000000;
+
+    const rows = [
+      { label: '2 estratti', a: fmt(w2a), t: dash,      q: dash,      c: dash,      tot: w2a },
+      { label: '3 estratti', a: fmt(w3a), t: fmt(w3t),  q: dash,      c: dash,      tot: w3a + w3t },
+      { label: '4 estratti', a: fmt(w4a), t: fmt(w4t),  q: fmt(w4q),  c: dash,      tot: w4a + w4t + w4q },
+      { label: '5 estratti', a: fmt(w5a), t: fmt(w5t),  q: fmt(w5q),  c: fmt(w5c),  tot: w5a + w5t + w5q + w5c, top: true },
+    ];
+
+    let html = `<table class="vinc-tbl"><thead><tr>
+      <th>Estratti</th><th>Ambo</th><th>Terno</th><th>Quaterna</th><th>Cinquina</th><th>Totale</th>
+    </tr></thead><tbody>`;
+    rows.forEach(({ label, a, t, q, c, tot, top }) => {
+      const cls = top ? ' class="v-top"' : '';
+      html += `<tr${cls}>
+        <td>${label}</td><td>${a}</td><td>${t}</td><td>${q}</td><td>${c}</td>
+        <td class="v-total">${fmt(tot)}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('vincite-table').innerHTML = html;
+
+  } else {
+    // Quartina (4 numeri): C(4,2)=6 ambi, C(4,3)=4 terni, C(4,4)=1 quaterna
+    const costPerBet = ambo + terno + quaterna;
+    document.getElementById('cost-total').textContent  = fmt(lastBets.length * costPerBet);
+    document.getElementById('cost-detail').textContent =
+      `${lastBets.length} quartine × ${fmt(costPerBet)}` +
+      `  [ambo ${fmt(ambo)} + terno ${fmt(terno)} + quaterna ${fmt(quaterna)}]`;
+
+    const w2a = ambo / 6 * 250;
+    const w3a = ambo / 6 * 3 * 250, w3t = terno / 4 * 4500;
+    const w4a = ambo * 250,          w4t = terno * 4500, w4q = quaterna * 120000;
+
+    const rows = [
+      { label: '2 estratti', a: fmt(w2a), t: dash,      q: dash,      tot: w2a,             top: false },
+      { label: '3 estratti', a: fmt(w3a), t: fmt(w3t),  q: dash,      tot: w3a + w3t,       top: false },
+      { label: '4 estratti', a: fmt(w4a), t: fmt(w4t),  q: fmt(w4q),  tot: w4a + w4t + w4q, top: true  },
+    ];
+
+    let html = `<table class="vinc-tbl"><thead><tr>
+      <th>Estratti</th><th>Ambo</th><th>Terno</th><th>Quaterna</th><th>Totale</th>
+    </tr></thead><tbody>`;
+    rows.forEach(({ label, a, t, q, tot, top }) => {
+      const cls = top ? ' class="v-top"' : '';
+      html += `<tr${cls}>
+        <td>${label}</td><td>${a}</td><td>${t}</td><td>${q}</td>
+        <td class="v-total">${fmt(tot)}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('vincite-table').innerHTML = html;
+  }
 }
 
 // ─── Render: bets ─────────────────────────────────────────────────────────────
 function renderBets(bets) {
   lastBets = bets;
+  const isIntegrale = st.sviluppo === 'integrale';
 
-  document.getElementById('bets-badge').textContent =
-    `${bets.length} giocate · 4 numeri`;
+  if (isIntegrale) {
+    document.getElementById('bets-title').textContent    = 'Cinquine — Sviluppo Integrale';
+    document.getElementById('bets-badge').textContent    = `${bets.length} giocate · 5 numeri`;
+    document.getElementById('vincite-badge').textContent = 'per singola cinquina · per ruota';
+    document.getElementById('vincite-note').textContent  = 'Vincita lorda al variare dei numeri estratti nella tua cinquina. I valori si aggiornano al cambio della puntata.';
+  } else {
+    document.getElementById('bets-title').textContent    = 'Quartine — Sviluppo Ridotto n−1';
+    document.getElementById('bets-badge').textContent    = `${bets.length} giocate · 4 numeri`;
+    document.getElementById('vincite-badge').textContent = 'per singola quartina · per ruota';
+    document.getElementById('vincite-note').textContent  = 'Vincita lorda al variare dei numeri estratti nella tua quartina. I valori si aggiornano al cambio della puntata.';
+  }
 
   document.getElementById('cost-note').style.display = 'flex';
   updateCost();
 
+  const colLabel = isIntegrale ? 'Cinquina (5 numeri)' : 'Quartina (4 numeri)';
   let html = `<thead><tr>
-    <th>#</th><th>Gruppo</th><th>Quartina (4 numeri)</th>
+    <th>#</th><th>Gruppo</th><th>${colLabel}</th>
   </tr></thead><tbody>`;
 
   bets.forEach(({ label, nums }, i) => {
@@ -712,7 +793,8 @@ function renderStatsCard(bets, doubles) {
 // ─── Generate ──────────────────────────────────────────────────────────────────
 function generate() {
   hideErr();
-  const fixedNums = parseNums(document.getElementById('fixed-in').value);
+  const fixedNums  = parseNums(document.getElementById('fixed-in').value);
+  const isIntegrale = st.sviluppo === 'integrale';
 
   try {
     const MAX_TRIES = 300;
@@ -725,26 +807,38 @@ function generate() {
       if (v.errors.length) throw new Error('Verifica: ' + v.errors.join(' · '));
       doubles  = v.doubles;
       quintine = getQuintine(grid);
-      bets     = getBetsRidotto(quintine);
+      bets     = isIntegrale ? getBetsIntegrale(quintine) : getBetsRidotto(quintine);
       tries++;
-    } while (hasDuplicateCombos(bets) && tries < MAX_TRIES);
+    } while (!isIntegrale && hasDuplicateCombos(bets) && tries < MAX_TRIES);
 
-    if (hasDuplicateCombos(bets))
+    if (!isIntegrale && hasDuplicateCombos(bets))
       throw new Error('Impossibile generare un sistema senza quartine duplicate. Prova a ridurre i numeri ripetuti.');
 
     renderGrid(grid, doubles);
     renderBets(bets);
-    renderStatsCard(bets, doubles);
 
-    const dataOra = new Date().toLocaleString('it-IT', { dateStyle: 'long', timeStyle: 'short' });
-    const fissiStr = fixedNums.length ? `Numeri fissi: ${fixedNums.join(', ')}` : '';
+    const statsCard = document.getElementById('stats-ridotto');
+    if (isIntegrale) {
+      statsCard.style.display = 'none';
+    } else {
+      statsCard.style.display = '';
+      renderStatsCard(bets, doubles);
+    }
+
+    const dataOra    = new Date().toLocaleString('it-IT', { dateStyle: 'long', timeStyle: 'short' });
+    const fissiStr   = fixedNums.length ? `Numeri fissi: ${fixedNums.join(', ')}` : '';
+    const sviluppoStr = isIntegrale ? 'Sviluppo: integrale (cinquine)' : 'Sviluppo: ridotto n−1 (quartine)';
     document.getElementById('print-info').textContent =
       [
         `Generato il ${dataOra}`,
-        `Sviluppo: ridotto n−1`,
+        sviluppoStr,
         `Numeri ripetuti: ${st.dup}`,
         fissiStr,
       ].filter(Boolean).join('  ·  ');
+
+    document.getElementById('print-hd').querySelector('h2').textContent = isIntegrale
+      ? 'Sistema Lotto 5×5 — Sviluppo Integrale (Cinquine)'
+      : 'Sistema Lotto 5×5 — Sviluppo Ridotto n−1 (Quartine)';
 
     document.getElementById('btn-pdf').classList.add('visible');
     const res = document.getElementById('results');

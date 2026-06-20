@@ -2,7 +2,7 @@
 
 **Sito online:** https://procolo75.github.io/sistemi-superenalotto/
 
-Generatore di sistemi a griglia per SuperEnalotto e Lotto. Cinque matrici disponibili — 4×4 e 5×5 per il Lotto, 6×6, 7×7 e 8×8 per il SuperEnalotto — con supporto a numeri fissi, numeri ripetuti, SuperStar (solo SuperEnalotto) e modalità ridotta o integrale. Funziona interamente nel browser, senza installazioni né dipendenze esterne.
+Generatore di sistemi a griglia per SuperEnalotto e Lotto. Cinque matrici disponibili — 4×4 e 5×5 per il Lotto, 6×6, 7×7 e 8×8 per il SuperEnalotto — con supporto a numeri fissi, numeri ripetuti, SuperStar (solo SuperEnalotto) e modalità ridotta o integrale per tutti i sistemi. Funziona interamente nel browser, senza installazioni né dipendenze esterne.
 
 ---
 
@@ -12,7 +12,7 @@ Generatore di sistemi a griglia per SuperEnalotto e Lotto. Cinque matrici dispon
 sistemi-superenalotto/
 ├── index.html              # Pagina principale — elenco dei sistemi disponibili
 ├── sistema_4x4_lotto.html  # Sistema Integrale 4×4 (Lotto)
-├── sistema_5x5_lotto.html  # Sistema Ridotto 5×5 (Lotto)
+├── sistema_5x5_lotto.html  # Sistema 5×5 Ridotto n−1 e Integrale (Lotto)
 ├── sistema_6x6.html        # Sistema Cruciverba 6×6 (SuperEnalotto)
 ├── sistema_7x7.html        # Sistema Cruciverba 7×7 (SuperEnalotto)
 └── sistema_8x8.html        # Sistema Cruciverba 8×8 (SuperEnalotto)
@@ -51,14 +51,20 @@ Il sistema più compatto: ogni riga, colonna e diagonale è esattamente una quar
 
 ---
 
-### 5×5 Ridotto n−1
+### 5×5 Ridotto n−1 / Integrale
 
 - **Griglia:** 5 righe × 5 colonne = 25 celle
 - **Gruppi:** 5 righe + 5 colonne + 2 diagonali = **12 quintine**
-- **Modalità:** ridotto n−1 — da ogni quintina viene escluso 1 numero → **12 quartine**
-- **Costo per giocata:** configurabile (ambo + terno + quaterna)
+- **Modalità disponibili:**
 
-Dopo la generazione appare la tabella dei numeri esclusi: per ogni riga, colonna e diagonale mostra quale numero è stato scartato e quante altre quartine del sistema lo contengono ancora.
+| Modalità | Giocate | Tipo puntata |
+|---|---|---|
+| Ridotto n−1 | 12 quartine (1 per quintina, escluso 1 numero) | ambo + terno + quaterna |
+| Integrale | 12 cinquine (ogni quintina giocata direttamente) | ambo + terno + quaterna + cinquina |
+
+**Ridotto n−1:** da ogni quintina viene escluso 1 numero (scelto con algoritmo greedy che massimizza la copertura), ottenendo una quartina per gruppo. Dopo la generazione appare la tabella dei numeri esclusi: per ogni riga, colonna e diagonale mostra quale numero è stato scartato e quante altre quartine del sistema lo contengono ancora.
+
+**Integrale:** le 12 quintine vengono giocate direttamente come cinquine a 5 numeri, senza alcuna esclusione. Il prospetto vincite mostra la vincita lorda per scenari a 2, 3, 4 e 5 estratti, con i corretti moltiplicatori per cinquine (C(5,2)=10 ambi, C(5,3)=10 terni, C(5,4)=5 quaterne, C(5,5)=1 cinquina).
 
 ---
 
